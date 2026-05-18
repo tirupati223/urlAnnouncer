@@ -8,8 +8,8 @@ so that your changes automatically appear online.
 ## Step 1 — Create a GitHub Account (if you don't have one)
 
 1. Go to **https://github.com/signup**
-2. Enter your email: `ytirupatiygaikwad@gmail.com`
-3. Choose a username — use: **tirupatiygaikwad**
+2. Enter your email: `ytirupati223@gmail.com`
+3. Choose a username — use: **tirupati223**
 4. Set a password
 5. Verify your email address
 
@@ -56,7 +56,7 @@ git push -u origin main
 ```
 
 When asked:
-- **Username:** your GitHub username (e.g. `tirupatiygaikwad`)
+- **Username:** your GitHub username (e.g. `tirupati223`)
 - **Password:** paste your Personal Access Token from Step 3
 
 Windows will save your credentials automatically — you will never be asked again.
@@ -65,7 +65,7 @@ Windows will save your credentials automatically — you will never be asked aga
 
 ## Step 5 — Create a Release (so users can download the addon)
 
-1. Go to: **https://github.com/tirupatiygaikwad/urlAnnouncer/releases/new**
+1. Go to: **https://github.com/tirupati223/urlAnnouncer/releases/new**
 2. Fill in:
    - **Tag:** `v3.0.0`
    - **Release title:** `URL Announcer v3.0.0`
@@ -96,7 +96,7 @@ The post-commit hook will automatically push to GitHub!
 ## Verify Your Repository
 
 After pushing, visit:
-**https://github.com/tirupatiygaikwad/urlAnnouncer**
+**https://github.com/tirupati223/urlAnnouncer**
 
 You should see all your files online.
 
@@ -115,7 +115,7 @@ You should see all your files online.
 
 ## Your GitHub Links (after setup)
 
-- **Repository:** https://github.com/tirupatiygaikwad/urlAnnouncer
-- **Releases:** https://github.com/tirupatiygaikwad/urlAnnouncer/releases
-- **Help file:** https://github.com/tirupatiygaikwad/urlAnnouncer/blob/main/addon/doc/en/readme.html
-- **Source code:** https://github.com/tirupatiygaikwad/urlAnnouncer/blob/main/addon/globalPlugins/urlAnnouncer/__init__.py
+- **Repository:** https://github.com/tirupati223/urlAnnouncer
+- **Releases:** https://github.com/tirupati223/urlAnnouncer/releases
+- **Help file:** https://github.com/tirupati223/urlAnnouncer/blob/main/addon/doc/en/readme.html
+- **Source code:** https://github.com/tirupati223/urlAnnouncer/blob/main/addon/globalPlugins/urlAnnouncer/__init__.py

@@ -2,7 +2,7 @@
 
 [![License: GPL-2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![NVDA: 2021.1+](https://img.shields.io/badge/NVDA-2021.1%2B-green.svg)](https://www.nvaccess.org/)
-[![Version: 3.0.0](https://img.shields.io/badge/Version-3.0.0-orange.svg)](https://github.com/tirupatiygaikwad/urlAnnouncer/releases)
+[![Version: 3.0.0](https://img.shields.io/badge/Version-3.0.0-orange.svg)](https://github.com/tirupati223/urlAnnouncer/releases)
 
 **Author:** Tirupati Gaikwad  
 **Email:** ytirupatiygaikwad@gmail.com  
@@ -71,7 +71,7 @@ Chrome · Edge · Firefox · Opera · Brave · Vivaldi · Internet Explorer · W
 
 ## Installation
 
-1. Download `urlAnnouncer-3.0.0.nvda-addon` from [Releases](https://github.com/tirupatiygaikwad/urlAnnouncer/releases)
+1. Download `urlAnnouncer-3.0.0.nvda-addon` from [Releases](https://github.com/tirupati223/urlAnnouncer/releases)
 2. Double-click the file — NVDA will ask to install it
 3. Click **Yes** and restart NVDA
 4. Open any browser and press **NVDA+Shift+U**
@@ -81,7 +81,7 @@ Chrome · Edge · Firefox · Opera · Brave · Vivaldi · Internet Explorer · W
 ## Building from Source
 
 ```bash
-git clone https://github.com/tirupatiygaikwad/urlAnnouncer.git
+git clone https://github.com/tirupati223/urlAnnouncer.git
 cd urlAnnouncer
 python build.py
 # Output: C:\Temp\urlAnnouncer-3.0.0.nvda-addon

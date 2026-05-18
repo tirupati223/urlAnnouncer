@@ -11,7 +11,7 @@ import urllib.request
 
 CURRENT_VERSION = "3.0.0"
 VERSION_URL = (
-	"https://raw.githubusercontent.com/tirupatiygaikwad/"
+	"https://raw.githubusercontent.com/tirupati223/"
 	"urlAnnouncer/main/version.json"
 )
 

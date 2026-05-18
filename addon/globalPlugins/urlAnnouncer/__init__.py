@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # URL Announcer — NVDA Global Plugin  v3.0.0
-# Author : Tirupati Janardhan Gaikwad <ytirupatiygaikwad@gmail.com>
-# NVDA Certified Developer 2025
+# Author : Tirupati Gaikwad <ytirupatiygaikwad@gmail.com>
 # License: GPL-2
 #
 # Follows the official NVDA Add-on Development Guide:

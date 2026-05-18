@@ -4,11 +4,10 @@
 [![NVDA: 2021.1+](https://img.shields.io/badge/NVDA-2021.1%2B-green.svg)](https://www.nvaccess.org/)
 [![Version: 3.0.0](https://img.shields.io/badge/Version-3.0.0-orange.svg)](https://github.com/tirupatiygaikwad/urlAnnouncer/releases)
 
-**Author:** Tirupati Janardhan Gaikwad — *Student & NVDA Certified Professional 2025*  
+**Author:** Tirupati Gaikwad  
 **Email:** ytirupatiygaikwad@gmail.com  
 **Mobile:** +91 99757 32046  
-**Certification:** [NV Access Certification Registry](https://certification.nvaccess.org/?query=tirupati&country=IN&submit=Search)  
-**About:** This add-on is a personal project created by a student passionate about accessibility technology for the blind and visually impaired community.
+**NVDA Certification:** [NV Access — Tirupati Gaikwad, India 2025](https://certification.nvaccess.org/?query=tirupati&country=IN&submit=Search)
 
 ---
 

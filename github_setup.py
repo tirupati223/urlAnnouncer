@@ -16,8 +16,7 @@ import webbrowser
 import time
 
 REPO_NAME  = "urlAnnouncer"
-REPO_DESC  = ("NVDA addon to announce, copy and share browser URLs. "
-              "By Tirupati Janardhan Gaikwad, NVDA Certified 2025.")
+REPO_DESC  = "NVDA addon to announce, copy and share browser URLs. By Tirupati Gaikwad."
 PROJECT    = r"C:\URL announcer"
 
 LINE = "=" * 55

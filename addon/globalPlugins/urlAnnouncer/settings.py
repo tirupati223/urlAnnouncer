@@ -133,9 +133,13 @@ class UrlAnnouncerSettingsPanel(settingsDialogs.SettingsPanel):
 		})
 		_cfg.save()
 
-		# Resize the in-memory history deque if the setting changed
+		# Resize the live in-memory history deque immediately (no restart needed).
+		# We use sys.modules to reach the already-loaded package without a
+		# circular import — _history is a variable in __init__.py, not a module.
 		try:
-			from . import _history
-			_history.resize(size)
+			import sys
+			pkg = sys.modules.get("globalPlugins.urlAnnouncer")
+			if pkg is not None and hasattr(pkg, "_history"):
+				pkg._history.resize(size)
 		except Exception:
 			pass

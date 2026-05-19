@@ -42,4 +42,4 @@ build.py
 
 # Misc
 .gitkeep
-version.json
+# version.json is intentionally tracked — the update checker fetches it from GitHub

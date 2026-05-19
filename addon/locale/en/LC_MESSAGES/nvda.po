@@ -1,5 +1,5 @@
 # URL Announcer NVDA Add-on
-# Copyright (C) 2025 Tirupati Janardhan Gaikwad
+# Copyright (C) 2026 Tirupati Janardhan Gaikwad
 # This file is distributed under the same license as the urlAnnouncer package.
 # NVDA Certified Expert 2025
 #
@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: urlAnnouncer 3.0.0\n"
 "Report-Msgid-Bugs-To: ytirupatiygaikwad@gmail.com\n"
-"POT-Creation-Date: 2025-05-19 00:00+0000\n"
-"PO-Revision-Date: 2025-05-19 00:00+0000\n"
+"POT-Creation-Date: 2026-05-19 00:00+0000\n"
+"PO-Revision-Date: 2026-05-19 00:00+0000\n"
 "Last-Translator: Tirupati Janardhan Gaikwad <ytirupatiygaikwad@gmail.com>\n"
 "Language-Team: English\n"
 "Language: en\n"
@@ -16,13 +16,19 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "URL Announcer command layer. After pressing, use: A announce, C copy, S share link, X security, W share menu, R history, M bookmark, B browse bookmarks, L shorten, T title, E email, O open in browser, P clipboard URL, D domain check, Q QR code, H help, Escape cancel."
-msgstr ""
-
+# --- Script category ---
 msgid "URL Announcer"
 msgstr ""
 
-msgid "URL Announcer layer active. A: announce URL. C: copy URL. S: share link. X: security. W: share menu. R: history. M: bookmark. B: browse bookmarks. L: shorten. T: title and URL. E: email. O: open in browser. P: clipboard URL. D: domain check. Q: QR code. H: help. Escape: cancel."
+# --- Entry gesture description ---
+msgid "URL Announcer command layer. Press A announce, C copy, S share link, X security, W share menu, R history, M bookmark, B bookmarks, L shorten, T title, E email, O open, P clipboard, D domain check, Q QR code, H help, Escape cancel."
+msgstr ""
+
+# --- Layer announce messages ---
+msgid "URL Announcer: A announce, C copy, S share link, X security, W share menu, R history, M bookmark, B bookmarks, L shorten, T title, E email, O open in browser, P clipboard URL, D domain check, Q QR code, H help, Escape cancel."
+msgstr ""
+
+msgid "URL Announcer ready."
 msgstr ""
 
 msgid "URL Announcer cancelled."
@@ -31,6 +37,63 @@ msgstr ""
 msgid "Cancelled."
 msgstr ""
 
+# --- Help text ---
+msgid "URL Announcer commands: A: announce URL. C: copy URL. S: copy share link, YouTube gives short youtu.be link. X: quick security status. W: share menu, WhatsApp, Facebook, Telegram, Gmail, Twitter, LinkedIn. R: browse URL history. M: save current URL as bookmark. B: browse saved bookmarks. L: shorten URL with TinyURL. T: announce page title and URL. E: open email with URL. O: open URL in chosen browser. P: read URL from clipboard. D: deep domain safety analysis. Q: generate QR code. Escape: cancel."
+msgstr ""
+
+# --- Script descriptions ---
+msgid "Repeat URL Announcer help"
+msgstr ""
+
+msgid "Cancel the URL Announcer layer"
+msgstr ""
+
+msgid "Announce current browser URL"
+msgstr ""
+
+msgid "Copy current browser URL to clipboard"
+msgstr ""
+
+msgid "Copy share link (YouTube: youtu.be short link)"
+msgstr ""
+
+msgid "Quick website security status"
+msgstr ""
+
+msgid "Open share menu"
+msgstr ""
+
+msgid "Browse URL history"
+msgstr ""
+
+msgid "Save current URL as bookmark"
+msgstr ""
+
+msgid "Browse saved bookmarks"
+msgstr ""
+
+msgid "Shorten URL with TinyURL"
+msgstr ""
+
+msgid "Announce page title and URL"
+msgstr ""
+
+msgid "Open email client with URL"
+msgstr ""
+
+msgid "Open URL in chosen browser"
+msgstr ""
+
+msgid "Read URL from clipboard"
+msgstr ""
+
+msgid "Deep domain safety analysis"
+msgstr ""
+
+msgid "Generate QR code for current URL"
+msgstr ""
+
+# --- Share dialog ---
 msgid "Share URL"
 msgstr ""
 
@@ -38,6 +101,9 @@ msgid "URL:"
 msgstr ""
 
 msgid "Share to:"
+msgstr ""
+
+msgid "Copy Link"
 msgstr ""
 
 msgid "Close"
@@ -49,6 +115,7 @@ msgstr ""
 msgid "Opening {platform}."
 msgstr ""
 
+# --- History dialog ---
 msgid "URL History"
 msgstr ""
 
@@ -67,9 +134,6 @@ msgstr ""
 msgid "Clear History"
 msgstr ""
 
-msgid "URL: "
-msgstr ""
-
 msgid "URL copied to clipboard."
 msgstr ""
 
@@ -79,6 +143,10 @@ msgstr ""
 msgid "URL history cleared."
 msgstr ""
 
+msgid "URL history is empty. Browse some pages and press NVDA+Shift+U then R."
+msgstr ""
+
+# --- Bookmark name dialog ---
 msgid "Save Bookmark"
 msgstr ""
 
@@ -94,6 +162,7 @@ msgstr ""
 msgid "Please enter a name for this bookmark."
 msgstr ""
 
+# --- Bookmark browse dialog ---
 msgid "Bookmarks"
 msgstr ""
 
@@ -101,9 +170,6 @@ msgid "Saved bookmarks:"
 msgstr ""
 
 msgid "Open"
-msgstr ""
-
-msgid "Announce"
 msgstr ""
 
 msgid "Delete"
@@ -121,13 +187,20 @@ msgstr ""
 msgid "Bookmark deleted: {name}."
 msgstr ""
 
+msgid "No bookmarks saved. Press NVDA+Shift+U then M to save the current URL."
+msgstr ""
+
+msgid "Bookmark saved: {name}."
+msgstr ""
+
+msgid "Bookmark updated: {name}."
+msgstr ""
+
+# --- Browser choice dialog ---
 msgid "Open URL In Browser"
 msgstr ""
 
 msgid "Choose a browser:"
-msgstr ""
-
-msgid "Open"
 msgstr ""
 
 msgid "Opening in {browser}."
@@ -136,16 +209,30 @@ msgstr ""
 msgid "Could not launch {browser}."
 msgstr ""
 
-msgid "No browser is active. Please switch to Chrome, Firefox, or Edge and try again."
+msgid "No supported browsers were found on this computer."
 msgstr ""
 
-msgid "Could not read the URL. Make sure a webpage is open and the browser is fully loaded."
+# --- Error messages ---
+msgid "No browser is active. Switch to Chrome, Firefox, Edge, or another supported browser and try again."
 msgstr ""
 
-msgid "URL Announcer update available: version {v}. Open the NVDA Add-on Store to update."
+msgid "Could not read the URL. Make sure a webpage is fully loaded and try again."
 msgstr ""
 
-msgid "Copy Link"
+msgid "The address bar contains text that is not a URL."
+msgstr ""
+
+msgid "An error occurred while reading the URL."
+msgstr ""
+
+# --- Action results ---
+msgid "URL: "
+msgstr ""
+
+msgid "Page: {title}. URL: {url}"
+msgstr ""
+
+msgid "URL copied to clipboard."
 msgstr ""
 
 msgid "YouTube share link copied: "
@@ -157,22 +244,16 @@ msgstr ""
 msgid "Shortening URL, please wait."
 msgstr ""
 
-msgid "Short URL copied to clipboard: "
+msgid "Short URL copied: "
 msgstr ""
 
-msgid "Could not shorten URL. Check your internet connection and try again."
-msgstr ""
-
-msgid "Page: {title}. URL: {url}"
+msgid "Could not shorten URL. Check your internet connection."
 msgstr ""
 
 msgid "Opening email client with the URL."
 msgstr ""
 
 msgid "Could not open the email client."
-msgstr ""
-
-msgid "No supported browsers were found on this computer."
 msgstr ""
 
 msgid "The clipboard is empty."
@@ -187,69 +268,11 @@ msgstr ""
 msgid "Generating QR code and opening in browser."
 msgstr ""
 
-msgid "URL history is empty. Browse some pages and press NVDA+Shift+U then R again."
+# --- Update notification ---
+msgid "URL Announcer update available: version {v}. Open the NVDA Add-on Store to update."
 msgstr ""
 
-msgid "Bookmark saved: {name}."
-msgstr ""
-
-msgid "Bookmark updated: {name}."
-msgstr ""
-
-msgid "No bookmarks saved. Press NVDA+Shift+U then M to save the current URL."
-msgstr ""
-
-msgid "Announce current browser URL"
-msgstr ""
-
-msgid "Copy current browser URL to clipboard"
-msgstr ""
-
-msgid "Copy share link (YouTube: youtu.be short link)"
-msgstr ""
-
-msgid "Announce website security status and analysis"
-msgstr ""
-
-msgid "Open share menu (WhatsApp, Facebook, Telegram, Gmail, Twitter, LinkedIn)"
-msgstr ""
-
-msgid "Browse URL history from this session"
-msgstr ""
-
-msgid "Save current URL as a bookmark"
-msgstr ""
-
-msgid "Browse saved bookmarks"
-msgstr ""
-
-msgid "Shorten current URL using TinyURL and copy to clipboard"
-msgstr ""
-
-msgid "Announce page title and URL together"
-msgstr ""
-
-msgid "Open email client with current URL pre-filled"
-msgstr ""
-
-msgid "Open current URL in a chosen browser"
-msgstr ""
-
-msgid "Read and announce URL from the clipboard"
-msgstr ""
-
-msgid "Extended domain safety analysis"
-msgstr ""
-
-msgid "Generate QR code for current URL and open it in browser"
-msgstr ""
-
-msgid "Repeat URL Announcer help"
-msgstr ""
-
-msgid "Cancel the URL Announcer layer"
-msgstr ""
-
+# --- Settings panel ---
 msgid "Speech and announce options:"
 msgstr ""
 
@@ -259,13 +282,28 @@ msgstr ""
 msgid "Include page title when announcing URL"
 msgstr ""
 
-msgid "Automatically announce URL each time a new page loads (browsers only)"
+msgid "Automatically announce URL each time a new page loads"
 msgstr ""
 
-msgid "Clipboard options:"
+msgid "Command layer options:"
 msgstr ""
 
-msgid "Restore clipboard content after reading the URL"
+msgid "Announce all commands when the layer is activated (uncheck for silent expert mode)"
+msgstr ""
+
+msgid "URL action options:"
+msgstr ""
+
+msgid "When A is pressed, URL Announcer should:"
+msgstr ""
+
+msgid "Announce URL only (speak the URL, do not copy)"
+msgstr ""
+
+msgid "Copy to clipboard and announce URL"
+msgstr ""
+
+msgid "Copy to clipboard silently, no speech"
 msgstr ""
 
 msgid "URL history options:"
@@ -274,13 +312,10 @@ msgstr ""
 msgid "Maximum URLs to remember per session:"
 msgstr ""
 
-msgid "Security options:"
+msgid "Security and update options:"
 msgstr ""
 
 msgid "Enable extended domain safety analysis"
-msgstr ""
-
-msgid "Update options:"
 msgstr ""
 
 msgid "Check for URL Announcer updates when NVDA starts"

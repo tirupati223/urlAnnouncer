@@ -29,10 +29,10 @@ addon_info = {
 
     # Minimum NVDA version this add-on supports.
     # Format: (year, minor[, patch])
-    "addon_minimumNVDAVersion": (2021, 1),
+    "addon_minimumNVDAVersion": (2019, 3),
 
     # Last NVDA version this add-on has been tested against.
-    "addon_lastTestedNVDAVersion": (2025, 1),
+    "addon_lastTestedNVDAVersion": (2025, 3),
 
     # Author name and email.
     "addon_author": u"Tirupati Janardhan Gaikwad <ytirupatiygaikwad@gmail.com>",

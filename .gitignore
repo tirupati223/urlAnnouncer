@@ -38,6 +38,7 @@ RUN_THIS_TO_UPLOAD_TO_GITHUB.bat
 SETUP_GITHUB.md
 github_setup.py
 build_local.py
+build.py
 
 # Misc
 .gitkeep

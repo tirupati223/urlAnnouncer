@@ -18,7 +18,7 @@ import gui.settingsDialogs as settingsDialogs
 from scriptHandler import script
 import logHandler
 
-# Safe import — disableInSecureMode was moved/removed in some NVDA builds.
+# Safe import — disableInSecureMode was moved in some NVDA builds.
 try:
 	from globalPluginHandler import disableInSecureMode
 except ImportError:
@@ -26,17 +26,18 @@ except ImportError:
 		cls.disabledInSecureMode = True
 		return cls
 
-# Must be called once at module level — makes _() available everywhere.
+# Makes _() available throughout this module.
 addonHandler.initTranslation()
 
 from . import _cfg
 from .history   import UrlHistory
 from .bookmarks import BookmarkManager
 
-# Module-level singletons shared with settings.py
+# Module-level singletons — shared with settings.py via the package namespace.
 _history   = UrlHistory(maxlen=_cfg.data.get("history_size", 10))
 _bookmarks = BookmarkManager()
 
+# Share platforms — template uses {url} as placeholder.
 _PLATFORMS = [
 	("WhatsApp",  "https://wa.me/?text={url}"),
 	("Facebook",  "https://www.facebook.com/sharer/sharer.php?u={url}"),
@@ -44,13 +45,12 @@ _PLATFORMS = [
 	("Gmail",     "https://mail.google.com/mail/?view=cm&body={url}"),
 	("Twitter",   "https://twitter.com/intent/tweet?url={url}"),
 	("LinkedIn",  "https://www.linkedin.com/sharing/share-offsite/?url={url}"),
-	(_("Copy Link"), None),
 ]
 
-# ===========================================================================
-# Accessible Dialogs
-# ===========================================================================
 
+# ===========================================================================
+# Accessible dialog classes
+# ===========================================================================
 
 class _ShareDialog(wx.Dialog):
 	def __init__(self, parent, url):
@@ -67,6 +67,10 @@ class _ShareDialog(wx.Dialog):
 			btn = wx.Button(panel, label=label)
 			btn.Bind(wx.EVT_BUTTON, lambda e, lbl=label, t=tmpl: self._on_platform(lbl, t))
 			sizer.Add(btn, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=3)
+		# Copy link button
+		copy_btn = wx.Button(panel, label=_("Copy Link"))
+		copy_btn.Bind(wx.EVT_BUTTON, lambda e: self._on_copy_link())
+		sizer.Add(copy_btn, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=3)
 		close = wx.Button(panel, wx.ID_CLOSE, label=_("Close"))
 		close.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CLOSE))
 		sizer.Add(close, flag=wx.ALL | wx.ALIGN_CENTER, border=8)
@@ -75,13 +79,15 @@ class _ShareDialog(wx.Dialog):
 		self.CentreOnScreen()
 
 	def _on_platform(self, label, template):
-		from .urlutils import clip_set, open_url, urlencode
-		if template is None:
-			clip_set(self._url)
-			ui.message(_("Link copied to clipboard."))
-		else:
-			open_url(template.replace("{url}", urlencode(self._url)))
-			ui.message(_("Opening {platform}.").format(platform=label))
+		from .urlutils import open_url, urlencode
+		open_url(template.replace("{url}", urlencode(self._url)))
+		ui.message(_("Opening {platform}.").format(platform=label))
+		self.EndModal(wx.ID_OK)
+
+	def _on_copy_link(self):
+		from .urlutils import clip_set
+		clip_set(self._url)
+		ui.message(_("Link copied to clipboard."))
 		self.EndModal(wx.ID_OK)
 
 
@@ -92,17 +98,20 @@ class _HistoryDialog(wx.Dialog):
 		self._items = items
 		panel = wx.Panel(self)
 		sizer = wx.BoxSizer(wx.VERTICAL)
-		sizer.Add(wx.StaticText(panel, label=_("Recent URLs (most recent first):")), flag=wx.ALL, border=6)
+		sizer.Add(
+			wx.StaticText(panel, label=_("Recent URLs (most recent first):")),
+			flag=wx.ALL, border=6,
+		)
 		self._list = wx.ListBox(panel, choices=items, style=wx.LB_SINGLE, size=(520, 180))
 		if items:
 			self._list.SetSelection(0)
 		sizer.Add(self._list, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=6)
 		btn_row = wx.BoxSizer(wx.HORIZONTAL)
 		for label, handler in [
-			(_("Announce"),       self._on_announce),
-			(_("Copy URL"),       self._on_copy),
-			(_("Open in Browser"),self._on_open),
-			(_("Clear History"),  self._on_clear),
+			(_("Announce"),        self._on_announce),
+			(_("Copy URL"),        self._on_copy),
+			(_("Open in Browser"), self._on_open),
+			(_("Clear History"),   self._on_clear),
 		]:
 			btn = wx.Button(panel, label=label)
 			btn.Bind(wx.EVT_BUTTON, handler)
@@ -185,8 +194,9 @@ class _BookmarkBrowseDialog(wx.Dialog):
 		panel = wx.Panel(self)
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		sizer.Add(wx.StaticText(panel, label=_("Saved bookmarks:")), flag=wx.ALL, border=6)
-		self._list = wx.ListBox(panel, choices=_bookmarks.get_names(),
-								style=wx.LB_SINGLE, size=(520, 180))
+		self._list = wx.ListBox(
+			panel, choices=_bookmarks.get_names(), style=wx.LB_SINGLE, size=(520, 180),
+		)
 		if _bookmarks.get_names():
 			self._list.SetSelection(0)
 		sizer.Add(self._list, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=6)
@@ -256,8 +266,9 @@ class _BrowserChoiceDialog(wx.Dialog):
 		panel = wx.Panel(self)
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		sizer.Add(wx.StaticText(panel, label=_("Choose a browser:")), flag=wx.ALL, border=6)
-		self._list = wx.ListBox(panel, choices=[b[0] for b in browsers],
-								style=wx.LB_SINGLE, size=(360, 150))
+		self._list = wx.ListBox(
+			panel, choices=[b[0] for b in browsers], style=wx.LB_SINGLE, size=(360, 150),
+		)
 		if browsers:
 			self._list.SetSelection(0)
 		sizer.Add(self._list, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=6)
@@ -294,18 +305,15 @@ class _BrowserChoiceDialog(wx.Dialog):
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	"""
 	URL Announcer — press NVDA+Shift+U to open the command layer,
-	then press one letter.  URL is read via UI Automation — focus never moves.
-	All network / file I/O runs in daemon threads — NVDA never freezes.
+	then press one letter to act.
+	URL is read via Windows UI Automation — focus never moves.
+	All network and file I/O runs in daemon threads — NVDA never freezes.
 	"""
 
 	scriptCategory     = _("URL Announcer")
 	disabledInSecureMode = True
 
-	# Layer state
-	_layer       = False
-	_layer_timer = None   # threading.Timer for auto-exit after 30 s
-
-	# All letter keys active while layer is open
+	# Layer key-to-script mapping.
 	_LAYER_GESTURES = {
 		"kb:a":      "layer_a",
 		"kb:c":      "layer_c",
@@ -326,11 +334,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		"kb:escape": "layer_esc",
 	}
 
-		# Lifecycle
-	
+	# ---- Lifecycle ---------------------------------------------------------
+
 	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		# Instance variables — not class variables.
+		self._layer       = False
+		self._layer_timer = None
 		try:
-			super().__init__(*args, **kwargs)
 			from .settings import UrlAnnouncerSettingsPanel
 			if UrlAnnouncerSettingsPanel not in settingsDialogs.NVDASettingsDialog.categoryClasses:
 				settingsDialogs.NVDASettingsDialog.categoryClasses.append(UrlAnnouncerSettingsPanel)
@@ -354,8 +365,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			logHandler.log.exception("URL Announcer: error in terminate")
 		super().terminate()
 
-		# Auto-announce on page load  (opt-in via settings)
-	
+	# ---- Auto-announce on page load (opt-in) --------------------------------
+
 	def event_documentLoadComplete(self, obj, nextHandler):
 		nextHandler()
 		if _cfg.data.get("auto_announce", False):
@@ -370,14 +381,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		from .urlutils import foreground_exe, BROWSERS, fetch_url, validate_url, parse_url_readable
 		if foreground_exe() not in BROWSERS:
 			return
-		url = fetch_url(restore_clipboard=_cfg.data.get("restore_clipboard", True))
+		url = fetch_url()
 		if url and validate_url(url):
 			_history.add(url)
 			spoken = parse_url_readable(url) if _cfg.data.get("readable_mode", False) else url
 			wx.CallAfter(ui.message, spoken)
 
-		# Update notification
-	
+	# ---- Update notification ------------------------------------------------
+
 	def _on_update_result(self, new_version):
 		if new_version:
 			wx.CallAfter(
@@ -386,43 +397,25 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				  "Open the NVDA Add-on Store to update.").format(v=new_version),
 			)
 
-		# Layer management
-	
+	# ---- Layer management --------------------------------------------------
+
 	def _enter_layer(self):
 		self._layer = True
 		for gesture, name in self._LAYER_GESTURES.items():
 			self.bindGesture(gesture, name)
-
-		# Auto-exit timer — prevents stuck layer state
 		self._cancel_layer_timer()
 		self._layer_timer = threading.Timer(30.0, self._layer_timeout)
 		self._layer_timer.daemon = True
 		self._layer_timer.start()
-
-		# Announce commands (optional — can be silenced in settings)
 		if _cfg.data.get("announce_layer_commands", True):
 			ui.message(_(
 				"URL Announcer: "
-				"A announce, "
-				"C copy, "
-				"S share link, "
-				"X security, "
-				"W share menu, "
-				"R history, "
-				"M bookmark, "
-				"B browse bookmarks, "
-				"L shorten, "
-				"T title, "
-				"E email, "
-				"O open in browser, "
-				"P clipboard URL, "
-				"D domain check, "
-				"Q QR code, "
-				"H help, "
-				"Escape cancel."
+				"A announce, C copy, S share link, X security, W share menu, "
+				"R history, M bookmark, B bookmarks, L shorten, T title, "
+				"E email, O open in browser, P clipboard URL, D domain check, "
+				"Q QR code, H help, Escape cancel."
 			))
 		else:
-			# Expert / silent mode — just a short confirmation
 			ui.message(_("URL Announcer ready."))
 
 	def _exit_layer(self):
@@ -447,14 +440,16 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if self._layer:
 			wx.CallAfter(self._exit_layer)
 
-		# Entry-point gesture  (always active)
-	
+	# ---- Entry-point gesture (always active) --------------------------------
+
 	@script(
 		gesture="kb:NVDA+shift+u",
-		description=_("URL Announcer command layer. Press then A announce, C copy, "
-					   "S share, X security, W share menu, R history, M bookmark, "
-					   "B bookmarks, L shorten, T title, E email, O open, P clipboard, "
-					   "D domain, Q QR code, H help, Escape cancel."),
+		description=_(
+			"URL Announcer command layer. Press A announce, C copy, S share link, "
+			"X security, W share menu, R history, M bookmark, B bookmarks, "
+			"L shorten, T title, E email, O open, P clipboard, "
+			"D domain check, Q QR code, H help, Escape cancel."
+		),
 		category=_("URL Announcer"),
 	)
 	def script_activateLayer(self, gesture):
@@ -464,16 +459,17 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		else:
 			self._enter_layer()
 
-		# Layer scripts — bound dynamically while layer is open
-	
+	# ---- Layer command scripts (bound only while layer is open) -------------
+
 	def script_layer_h(self, gesture):
+		"""Repeat help — layer stays open so user can act immediately after."""
 		ui.message(_(
 			"URL Announcer commands: "
 			"A: announce URL. "
 			"C: copy URL. "
-			"S: copy share link — YouTube gives short youtu.be link. "
+			"S: copy share link, YouTube gives short youtu.be link. "
 			"X: quick security status. "
-			"W: share menu — WhatsApp, Facebook, Telegram, Gmail, Twitter, LinkedIn. "
+			"W: share menu, WhatsApp, Facebook, Telegram, Gmail, Twitter, LinkedIn. "
 			"R: browse URL history. "
 			"M: save current URL as bookmark. "
 			"B: browse saved bookmarks. "
@@ -492,8 +488,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		self._exit_layer()
 		ui.message(_("Cancelled."))
 	script_layer_esc.__doc__ = _("Cancel the URL Announcer layer")
-
-	# ---- Action scripts ----
 
 	def script_layer_a(self, gesture):
 		self._exit_layer()
@@ -517,7 +511,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def script_layer_w(self, gesture):
 		self._exit_layer()
-		threading.Thread(target=self._do_share_dialog, daemon=True, name="UA-dialog").start()
+		threading.Thread(target=self._do_share_dialog, daemon=True, name="UA-share-dlg").start()
 	script_layer_w.__doc__ = _("Open share menu")
 
 	def script_layer_r(self, gesture):
@@ -570,131 +564,123 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		threading.Thread(target=self._do_qr_code, daemon=True, name="UA-qr").start()
 	script_layer_q.__doc__ = _("Generate QR code for current URL")
 
-		# Browser / URL check  (called from every action method)
-	
+	# ---- URL/browser validation (safe from any background thread) ----------
+
 	def _check_browser(self):
 		"""
-		Verify a browser is active and fetch its URL via UI Automation.
-		Returns (url, None) on success or (None, error_message).
-		Safe to call from any background thread.
+		Verify a supported browser is in the foreground and fetch its URL.
+		Returns (url, None) on success or (None, error_message) on failure.
 		"""
 		from .urlutils import foreground_exe, BROWSERS, fetch_url, validate_url
-		if foreground_exe() not in BROWSERS:
+		exe = foreground_exe()
+		if exe not in BROWSERS:
 			return None, _(
 				"No browser is active. "
-				"Please switch to Chrome, Firefox, Edge, or another browser and try again."
+				"Switch to Chrome, Firefox, Edge, or another supported browser and try again."
 			)
-		url = fetch_url(restore_clipboard=_cfg.data.get("restore_clipboard", True))
-		if not url or not validate_url(url):
+		url = fetch_url()
+		if not url:
 			return None, _(
 				"Could not read the URL. "
-				"Make sure a webpage is open and fully loaded."
+				"Make sure a webpage is fully loaded and try again."
+			)
+		if not validate_url(url):
+			return None, _(
+				"The address bar contains text that is not a URL."
 			)
 		return url, None
 
-		# Actions  (all run in daemon background threads)
-	
+	# ---- Action methods (all run in daemon background threads) --------------
+
 	def _do_announce(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			_history.add(url)
-
-			# Build spoken text
 			if _cfg.data.get("readable_mode", False):
 				from .urlutils import parse_url_readable
 				spoken = parse_url_readable(url)
 			else:
 				spoken = url
-
 			if _cfg.data.get("announce_title", False):
-				try:
-					import api
-					obj = api.getForegroundObject()
-					if obj and getattr(obj, "name", None):
-						spoken = _("Page: {title}. URL: {url}").format(
-							title=obj.name, url=spoken)
-				except Exception:
-					pass
-
-			# Respect url_action_mode setting
+				from .urlutils import get_page_title
+				title = get_page_title()
+				if title:
+					spoken = _("Page: {title}. URL: {url}").format(title=title, url=spoken)
 			mode = _cfg.data.get("url_action_mode", "announce")
 			if mode == "copy":
 				from .urlutils import clip_set
 				clip_set(url)
-				# Silent copy — no speech
 			elif mode == "copy_announce":
 				from .urlutils import clip_set
 				clip_set(url)
-				ui.message(_("URL: ") + spoken)
+				wx.CallAfter(ui.message, _("URL: ") + spoken)
 			else:
-				# Default: announce only
-				ui.message(_("URL: ") + spoken)
+				wx.CallAfter(ui.message, _("URL: ") + spoken)
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_announce")
-			ui.message(_("An error occurred while reading the URL."))
+			logHandler.log.exception("URL Announcer: _do_announce")
+			wx.CallAfter(ui.message, _("An error occurred while reading the URL."))
 
 	def _do_copy(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			from .urlutils import clip_set
 			_history.add(url)
 			clip_set(url)
-			ui.message(_("URL copied to clipboard."))
+			wx.CallAfter(ui.message, _("URL copied to clipboard."))
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_copy")
+			logHandler.log.exception("URL Announcer: _do_copy")
 
 	def _do_share(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			from .urlutils import share_url, clip_set
 			_history.add(url)
 			s = share_url(url)
 			clip_set(s)
 			if s != url:
-				ui.message(_("YouTube share link copied: ") + s)
+				wx.CallAfter(ui.message, _("YouTube share link copied: ") + s)
 			else:
-				ui.message(_("Share link copied: ") + s)
+				wx.CallAfter(ui.message, _("Share link copied: ") + s)
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_share")
+			logHandler.log.exception("URL Announcer: _do_share")
 
 	def _do_security(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			from .urlutils import get_quick_security
 			_history.add(url)
-			ui.message(get_quick_security(url))
+			wx.CallAfter(ui.message, get_quick_security(url))
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_security")
+			logHandler.log.exception("URL Announcer: _do_security")
 
 	def _do_share_dialog(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
-			from .urlutils import share_url
 			_history.add(url)
 			wx.CallAfter(self._show_modal, _ShareDialog, url)
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_share_dialog")
+			logHandler.log.exception("URL Announcer: _do_share_dialog")
 
 	def _do_save_bookmark(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			try:
 				from urllib.parse import urlparse
@@ -703,124 +689,119 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				default = ""
 			wx.CallAfter(self._open_bookmark_name_dialog, url, default)
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_save_bookmark")
+			logHandler.log.exception("URL Announcer: _do_save_bookmark")
 
 	def _do_shorten(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			from .urlutils import shorten_url, clip_set
 			_history.add(url)
-			ui.message(_("Shortening URL, please wait."))
+			wx.CallAfter(ui.message, _("Shortening URL, please wait."))
 			short = shorten_url(url)
 			if short:
 				clip_set(short)
-				ui.message(_("Short URL copied: ") + short)
+				wx.CallAfter(ui.message, _("Short URL copied: ") + short)
 			else:
-				ui.message(_("Could not shorten URL. Check your internet connection."))
+				wx.CallAfter(ui.message, _("Could not shorten URL. Check your internet connection."))
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_shorten")
+			logHandler.log.exception("URL Announcer: _do_shorten")
 
 	def _do_title_url(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			_history.add(url)
-			title = ""
-			try:
-				import api
-				obj = api.getForegroundObject()
-				if obj and getattr(obj, "name", None):
-					title = obj.name
-			except Exception:
-				pass
+			from .urlutils import get_page_title
+			title = get_page_title()
 			if title:
-				ui.message(_("Page: {title}. URL: {url}").format(title=title, url=url))
+				wx.CallAfter(ui.message,
+					_("Page: {title}. URL: {url}").format(title=title, url=url))
 			else:
-				ui.message(_("URL: ") + url)
+				wx.CallAfter(ui.message, _("URL: ") + url)
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_title_url")
+			logHandler.log.exception("URL Announcer: _do_title_url")
 
 	def _do_email(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			from .urlutils import urlencode
 			_history.add(url)
 			try:
 				os.startfile("mailto:?subject=Sharing a link&body=" + urlencode(url))
-				ui.message(_("Opening email client with the URL."))
+				wx.CallAfter(ui.message, _("Opening email client with the URL."))
 			except Exception:
-				ui.message(_("Could not open the email client."))
+				wx.CallAfter(ui.message, _("Could not open the email client."))
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_email")
+			logHandler.log.exception("URL Announcer: _do_email")
 
 	def _do_open_in_browser(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			from .urlutils import get_installed_browsers
 			_history.add(url)
 			browsers = get_installed_browsers()
 			if not browsers:
-				ui.message(_("No supported browsers were found on this computer."))
+				wx.CallAfter(ui.message, _("No supported browsers were found on this computer."))
 				return
-			wx.CallAfter(self._show_browser_dialog, browsers, url)
+			wx.CallAfter(self._show_modal, _BrowserChoiceDialog, browsers, url)
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_open_in_browser")
+			logHandler.log.exception("URL Announcer: _do_open_in_browser")
 
 	def _do_clipboard_url(self):
 		try:
 			from .urlutils import clip_get, validate_url, parse_url_readable
 			text = clip_get().strip()
 			if not text:
-				ui.message(_("The clipboard is empty."))
+				wx.CallAfter(ui.message, _("The clipboard is empty."))
 				return
 			if not validate_url(text):
-				ui.message(_("The clipboard does not contain a valid URL."))
+				wx.CallAfter(ui.message, _("The clipboard does not contain a valid URL."))
 				return
 			_history.add(text)
 			spoken = parse_url_readable(text) if _cfg.data.get("readable_mode", False) else text
-			ui.message(_("Clipboard URL: ") + spoken)
+			wx.CallAfter(ui.message, _("Clipboard URL: ") + spoken)
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_clipboard_url")
+			logHandler.log.exception("URL Announcer: _do_clipboard_url")
 
 	def _do_domain_check(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			from .urlutils import get_security_info
 			_history.add(url)
-			ui.message(get_security_info(url))
+			wx.CallAfter(ui.message, get_security_info(url))
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_domain_check")
+			logHandler.log.exception("URL Announcer: _do_domain_check")
 
 	def _do_qr_code(self):
 		try:
 			url, err = self._check_browser()
 			if err:
-				ui.message(err)
+				wx.CallAfter(ui.message, err)
 				return
 			from .urlutils import open_url, urlencode
 			_history.add(url)
 			qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + urlencode(url)
-			ui.message(_("Generating QR code and opening in browser."))
+			wx.CallAfter(ui.message, _("Generating QR code and opening in browser."))
 			open_url(qr_url)
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in _do_qr_code")
+			logHandler.log.exception("URL Announcer: _do_qr_code")
 
-		# Dialog helpers  (called via wx.CallAfter from background threads)
-	
+	# ---- Dialog helpers (must run on the wx main thread) -------------------
+
 	def _show_modal(self, dialog_class, *args):
 		dlg = dialog_class(gui.mainFrame, *args)
 		gui.mainFrame.prePopup()
@@ -833,8 +814,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	def _open_history_dialog(self):
 		items = _history.get_recent()
 		if not items:
-			ui.message(_("URL history is empty. "
-						  "Browse some pages and press NVDA+Shift+U then R again."))
+			ui.message(_("URL history is empty. Browse some pages and press NVDA+Shift+U then R."))
 			return
 		self._show_modal(_HistoryDialog, items)
 
@@ -854,8 +834,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def _open_bookmarks_dialog(self):
 		if not len(_bookmarks):
-			ui.message(_("No bookmarks saved. "
-						  "Press NVDA+Shift+U then M to save the current URL."))
+			ui.message(_("No bookmarks saved. Press NVDA+Shift+U then M to save the current URL."))
 			return
 		self._show_modal(_BookmarkBrowseDialog)
 

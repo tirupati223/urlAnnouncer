@@ -1,0 +1,120 @@
+name: Build and Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Python syntax (all source files)
+        run: |
+          python -m py_compile addon/globalPlugins/urlAnnouncer/__init__.py
+          python -m py_compile addon/globalPlugins/urlAnnouncer/urlutils.py
+          python -m py_compile addon/globalPlugins/urlAnnouncer/_cfg.py
+          python -m py_compile addon/globalPlugins/urlAnnouncer/settings.py
+          python -m py_compile addon/globalPlugins/urlAnnouncer/bookmarks.py
+          python -m py_compile addon/globalPlugins/urlAnnouncer/history.py
+          python -m py_compile addon/globalPlugins/urlAnnouncer/updatecheck.py
+          echo "All source files pass syntax check."
+
+      - name: Validate manifest
+        run: |
+          python -c "
+          import configparser, sys
+          cfg = configparser.ConfigParser()
+          cfg.read('manifest.ini')
+          required = ['name','summary','version','author','minimumNVDAVersion','lastTestedNVDAVersion']
+          for key in required:
+              if not cfg.has_option('DEFAULT', key):
+                  print(f'MISSING manifest key: {key}')
+                  sys.exit(1)
+          print('manifest.ini is valid.')
+          "
+
+      - name: Validate version.json
+        run: |
+          python -c "
+          import json, sys
+          with open('version.json') as f:
+              data = json.load(f)
+          for key in ('version', 'release_date', 'download_url'):
+              if key not in data:
+                  print(f'MISSING version.json key: {key}')
+                  sys.exit(1)
+          print(f'version.json is valid. Current version: {data[\"version\"]}')
+          "
+
+      - name: Build .nvda-addon package
+        run: |
+          python -c "
+          import zipfile, os
+
+          out = 'urlAnnouncer-3.0.0.nvda-addon'
+          with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as zf:
+              zf.write('manifest.ini', 'manifest.ini')
+              for root, dirs, files in os.walk('addon'):
+                  dirs[:] = [d for d in dirs if d != '__pycache__']
+                  for fname in files:
+                      if fname.endswith(('.pyc', '.pyo')):
+                          continue
+                      fpath = os.path.join(root, fname)
+                      arcname = os.path.relpath(fpath, 'addon')
+                      zf.write(fpath, arcname)
+
+          size = os.path.getsize(out)
+          print(f'Built: {out} ({size:,} bytes)')
+
+          # Validate the package structure
+          with zipfile.ZipFile(out, 'r') as zf:
+              names = [i.filename for i in zf.infolist()]
+          required = [
+              'manifest.ini',
+              'globalPlugins/urlAnnouncer/__init__.py',
+              'globalPlugins/urlAnnouncer/urlutils.py',
+              'globalPlugins/urlAnnouncer/_cfg.py',
+              'globalPlugins/urlAnnouncer/settings.py',
+          ]
+          for r in required:
+              if r not in names:
+                  raise FileNotFoundError(f'Missing from package: {r}')
+          print('Package structure is valid.')
+          "
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: urlAnnouncer-3.0.0
+          path: urlAnnouncer-3.0.0.nvda-addon
+          retention-days: 30
+
+  release:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: urlAnnouncer-3.0.0
+
+      - name: Attach addon to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: urlAnnouncer-3.0.0.nvda-addon

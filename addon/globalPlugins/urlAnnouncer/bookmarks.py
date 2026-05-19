@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# URL Announcer — Persistent URL Bookmarks
+# bookmarks.py - saves and loads named URL bookmarks
+# Tirupati Janardhan Gaikwad
 import json
 import os
 import threading
@@ -23,9 +24,6 @@ class BookmarkManager:
 		self._bookmarks = []   # list of {"name": str, "url": str}
 		self._load()
 
-	# ------------------------------------------------------------------
-	# Private
-
 	def _load(self):
 		try:
 			if os.path.exists(self._path):
@@ -43,9 +41,6 @@ class BookmarkManager:
 				json.dump(self._bookmarks, f, ensure_ascii=False, indent=2)
 		except Exception:
 			pass
-
-	# ------------------------------------------------------------------
-	# Public API
 
 	def add(self, name, url):
 		"""

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# URL Announcer — Configuration Module
-# Isolated to avoid circular imports between __init__.py and settings.py
+# _cfg.py - settings storage for URL Announcer
+# Tirupati Janardhan Gaikwad
 import json
 import os
 

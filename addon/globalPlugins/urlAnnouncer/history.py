@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# URL Announcer — Session URL History
+# history.py - URL history for one session
+# Tirupati Janardhan Gaikwad
 import collections
 import threading
 
@@ -14,7 +15,6 @@ class UrlHistory:
 		self._lock    = threading.Lock()
 		self._history = collections.deque(maxlen=maxlen)
 
-	# ------------------------------------------------------------------
 
 	def add(self, url):
 		"""

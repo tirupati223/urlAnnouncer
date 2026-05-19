@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-# URL Announcer — NVDA Settings Panel
-# NVDA Menu → Preferences → Settings → URL Announcer
+# settings.py - NVDA settings panel for URL Announcer
+# Tirupati Janardhan Gaikwad
+# NVDA Menu > Preferences > Settings > URL Announcer
 
 import wx
 import gui

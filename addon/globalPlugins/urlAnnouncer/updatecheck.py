@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# URL Announcer — Background Update Checker
+# updatecheck.py - checks GitHub for newer versions
+# Tirupati Janardhan Gaikwad
 #
 # Checks a version.json file on GitHub. If the addon author has not yet
 # created the GitHub repository, the request simply fails silently.

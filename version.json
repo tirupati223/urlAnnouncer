@@ -1,0 +1,6 @@
+{
+  "version": "3.0.0",
+  "release_date": "2026-05-19",
+  "download_url": "https://github.com/tirupati223/urlAnnouncer/releases/download/v3.0.0/urlAnnouncer-3.0.0.nvda-addon",
+  "changelog": "URL history, bookmarks, URL shortener, QR code, email, open in browser, clipboard URL reader, domain safety analysis, settings panel, readable URL mode, auto-announce, Firefox retry loop."
+}

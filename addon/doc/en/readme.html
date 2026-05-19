@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URL Announcer v3.0.0 — NVDA Add-on Help</title>
+<style>
+body        { font-family: Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 28px; line-height: 1.75; color: #111; }
+h1          { border-bottom: 3px solid #1a237e; padding-bottom: 8px; color: #1a237e; }
+h2          { color: #283593; margin-top: 2.2em; border-bottom: 1px solid #c5cae9; padding-bottom: 4px; }
+h3          { color: #3949ab; margin-top: 1.4em; }
+table       { border-collapse: collapse; width: 100%; margin: 14px 0 26px 0; }
+th, td      { border: 1px solid #bbb; padding: 9px 14px; text-align: left; }
+th          { background: #e8eaf6; font-weight: bold; }
+tr:nth-child(even) { background: #f5f5f5; }
+code        { background: #eceff1; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; }
+.note       { background: #fff9c4; border-left: 4px solid #f9a825; padding: 12px 16px; margin: 18px 0; border-radius: 2px; }
+.important  { background: #e8f5e9; border-left: 4px solid #2e7d32; padding: 12px 16px; margin: 18px 0; border-radius: 2px; }
+.warning    { background: #fbe9e7; border-left: 4px solid #bf360c; padding: 12px 16px; margin: 18px 0; border-radius: 2px; }
+.new-badge  { background: #1565c0; color: #fff; font-size: 0.75em; padding: 1px 6px; border-radius: 10px; vertical-align: middle; margin-left: 6px; }
+.author-card { display: flex; align-items: center; gap: 28px; background: #f5f7ff; border: 1px solid #c5cae9; border-radius: 10px; padding: 20px 24px; margin: 18px 0 28px 0; flex-wrap: wrap; }
+.author-photo { border-radius: 10px; width: 110px; height: auto; flex-shrink: 0; }
+.author-info  { flex: 1; min-width: 200px; }
+.author-info h3 { margin: 0 0 6px 0; color: #1a237e; font-size: 1.2em; }
+.cert-block   { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.cert-block img { width: 190px; }
+.cert-link    { font-weight: bold; color: #1a237e; text-decoration: none; border: 2px solid #1abc9c; border-radius: 6px; padding: 5px 12px; font-size: 0.9em; }
+.cert-link:hover { background: #1abc9c; color: white; }
+</style>
+</head>
+<body>
+
+<h1>URL Announcer</h1>
+
+<div class="author-card">
+  <img class="author-photo" src="../../globalPlugins/urlAnnouncer/tirupati_photo.png" alt="Photo of Tirupati Janardhan Gaikwad"/>
+  <div class="author-info">
+    <h3>Tirupati Janardhan Gaikwad</h3>
+    <p>
+      <strong>Version:</strong> 3.0.0 &nbsp;|&nbsp;
+      <strong>NVDA Compatibility:</strong> 2021.1 &ndash; 2025.1<br>
+      📧 <a href="mailto:ytirupatiygaikwad@gmail.com">ytirupatiygaikwad@gmail.com</a><br>
+      📞 +91 99757 32046<br>
+      <strong>License:</strong> <a href="https://www.gnu.org/licenses/gpl-2.0.html">GPL v2</a>
+    </p>
+  </div>
+  <div class="cert-block">
+    <a href="https://certification.nvaccess.org/?query=tirupati&amp;country=IN&amp;submit=Search">
+      <img src="../../globalPlugins/urlAnnouncer/nvda-certified-expert-2025.svg" alt="NVDA Certified Expert 2025 Badge"/>
+    </a>
+    <a class="cert-link" href="https://certification.nvaccess.org/?query=tirupati&amp;country=IN&amp;submit=Search">
+      ✅ Verify My Certification
+    </a>
+  </div>
+</div>
+
+<h2>Overview</h2>
+<p>
+URL Announcer is a professional NVDA add-on that gives blind and visually impaired users
+complete control over the current browser URL.
+Press <code>NVDA+Shift+U</code> to open the command layer, then press one letter to act.
+</p>
+
+<div class="important">
+<strong>Command layer entry gesture:</strong> <code>NVDA+Shift+U</code><br>
+This gesture was chosen because <code>NVDA+U</code> (without Shift) is a built-in NVDA browse-mode
+shortcut for navigating to the next unvisited link. <code>NVDA+Shift+U</code> is free of all conflicts.
+After pressing it, NVDA speaks all available commands and waits for your next key press.
+</div>
+
+<h2>Complete Command Reference</h2>
+
+<table>
+<thead>
+<tr><th>Key</th><th>Action</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><code>A</code></td><td>Announce URL</td><td>Speaks the current browser URL. In readable mode, speaks Protocol / Domain / Path / Parameters separately.</td></tr>
+<tr><td><code>C</code></td><td>Copy URL</td><td>Copies the full URL to the clipboard and confirms verbally.</td></tr>
+<tr><td><code>S</code></td><td>Copy share link</td><td>Copies a share-ready link. YouTube videos become a short <em>youtu.be</em> link with timestamp preserved.</td></tr>
+<tr><td><code>X</code></td><td>Security &amp; analysis</td><td>Speaks: protocol security, domain name, login-page warning, sensitive-data warning, IP-address warning.</td></tr>
+<tr><td><code>W</code></td><td>Share menu</td><td>Opens an accessible dialog with buttons for WhatsApp, Facebook, Telegram, Gmail, Twitter, LinkedIn, and Copy Link.</td></tr>
+<tr><td><code>R</code></td><td>URL history <span class="new-badge">NEW</span></td><td>Opens a list of the last 10 (configurable) URLs you visited this session. Announce, copy, or open any entry.</td></tr>
+<tr><td><code>M</code></td><td>Save bookmark <span class="new-badge">NEW</span></td><td>Saves the current URL with a name you choose. Bookmarks are stored on disk and survive NVDA restarts.</td></tr>
+<tr><td><code>B</code></td><td>Browse bookmarks <span class="new-badge">NEW</span></td><td>Opens your saved bookmarks. Open, copy, announce, or delete any bookmark.</td></tr>
+<tr><td><code>L</code></td><td>Shorten URL <span class="new-badge">NEW</span></td><td>Calls the TinyURL API (free, no API key) to create a short link and copies it to the clipboard.</td></tr>
+<tr><td><code>T</code></td><td>Title + URL <span class="new-badge">NEW</span></td><td>Speaks both the page title and URL together for full context.</td></tr>
+<tr><td><code>E</code></td><td>Email URL <span class="new-badge">NEW</span></td><td>Opens your default email client (Outlook, Thunderbird, Gmail app) with the URL pre-filled in the message body.</td></tr>
+<tr><td><code>O</code></td><td>Open in browser <span class="new-badge">NEW</span></td><td>Detects installed browsers from the Windows registry and lets you choose which one to open the URL in.</td></tr>
+<tr><td><code>P</code></td><td>Read clipboard URL <span class="new-badge">NEW</span></td><td>Reads and announces a URL already in the clipboard — works without a browser open.</td></tr>
+<tr><td><code>D</code></td><td>Domain safety check <span class="new-badge">NEW</span></td><td>Full security analysis: protocol, domain, login-page detection, sensitive data in URL, IP-address detection.</td></tr>
+<tr><td><code>Q</code></td><td>QR code <span class="new-badge">NEW</span></td><td>Generates a QR code image of the URL using qrserver.com and opens it in your browser. Show to a phone camera to share.</td></tr>
+<tr><td><code>H</code></td><td>Help</td><td>Repeats all available commands.</td></tr>
+<tr><td><code>Escape</code></td><td>Cancel</td><td>Exits the command layer without doing anything.</td></tr>
+</tbody>
+</table>
+
+<h2>Quick Reference Keyboard Table</h2>
+
+<table>
+<thead>
+<tr><th>Full Shortcut</th><th>Action</th></tr>
+</thead>
+<tbody>
+<tr><td><code>NVDA+Shift+U</code></td><td>Activate URL Announcer command layer</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>A</code></td><td>Announce URL (raw or readable mode)</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>C</code></td><td>Copy URL to clipboard</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>S</code></td><td>Copy share link (YouTube: youtu.be short link)</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>X</code></td><td>Website security status and analysis</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>W</code></td><td>Share menu dialog</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>R</code></td><td>URL history browser</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>M</code></td><td>Save current URL as bookmark</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>B</code></td><td>Browse saved bookmarks</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>L</code></td><td>Shorten URL (TinyURL)</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>T</code></td><td>Announce page title and URL together</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>E</code></td><td>Email URL</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>O</code></td><td>Open URL in a chosen browser</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>P</code></td><td>Read URL from clipboard</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>D</code></td><td>Domain safety check</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>Q</code></td><td>Generate QR code</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>H</code></td><td>Repeat help</td></tr>
+<tr><td><code>NVDA+Shift+U</code>, <code>Escape</code></td><td>Cancel</td></tr>
+</tbody>
+</table>
+
+<h2>Settings Panel</h2>
+<p>Go to <strong>NVDA Menu &rarr; Preferences &rarr; Settings &rarr; URL Announcer</strong> to configure:</p>
+<ul>
+<li><strong>Speak URL in readable chunks</strong> — Instead of the raw URL, NVDA speaks it as: Protocol: HTTPS. Domain: google dot com. Path: search. Parameters: q equals nvda.</li>
+<li><strong>Include page title when announcing URL</strong> — Announces "Page: Example Site. URL: https://..." when you press A.</li>
+<li><strong>Automatically announce URL on each page load</strong> — Opt-in. NVDA speaks the URL every time a browser page finishes loading.</li>
+<li><strong>Restore clipboard after reading URL</strong> — On by default. Your original clipboard content is restored after URL Announcer copies the URL internally.</li>
+<li><strong>Maximum URLs to remember per session</strong> — Choose 5, 10, 20, or 50. History is in-memory only and cleared when NVDA restarts.</li>
+<li><strong>Extended domain safety analysis</strong> — Enables IP-address detection, excessive-subdomain warnings, and other advanced checks.</li>
+<li><strong>Check for URL Announcer updates on NVDA startup</strong> — On by default. Silently checks for new versions and notifies you once if an update is available.</li>
+</ul>
+
+<h2>Supported Browsers</h2>
+<p>Works with all browsers that support the <code>Ctrl+L</code> address bar shortcut:</p>
+<ul>
+<li>Google Chrome</li>
+<li>Microsoft Edge</li>
+<li>Mozilla Firefox</li>
+<li>Opera</li>
+<li>Brave</li>
+<li>Vivaldi</li>
+<li>Internet Explorer</li>
+<li>Waterfox</li>
+<li>SeaMonkey</li>
+<li>Pale Moon</li>
+</ul>
+
+<h2>YouTube Short Links (S key)</h2>
+<p>On any YouTube video page, pressing <code>S</code> converts the URL to a compact <em>youtu.be</em> link.</p>
+<p><strong>Example:</strong><br>
+Full: <code>https://www.youtube.com/watch?v=dQw4w9WgXcQ&amp;t=30</code><br>
+Short: <code>https://youtu.be/dQw4w9WgXcQ?t=30</code> (timestamp preserved)
+</p>
+
+<h2>URL History (R key)</h2>
+<p>
+Every URL you read, copy, or share is automatically saved to the in-memory session history.
+Press <code>R</code> to open a list. From the list you can:
+announce the URL, copy it, or open it directly in the browser.
+The history is cleared when NVDA restarts. The maximum size is configurable in Settings.
+</p>
+
+<h2>Bookmarks (M and B keys)</h2>
+<p>
+Press <code>M</code> to save the current URL with a name you choose.
+Bookmarks are saved to disk (<code>%APPDATA%\nvda\urlAnnouncer_bookmarks.json</code>)
+and are available across NVDA restarts.
+Press <code>B</code> to open your saved bookmarks — you can open, copy, announce, or delete any entry.
+</p>
+
+<h2>Readable URL Mode (Settings)</h2>
+<p>When enabled, URLs are spoken in labelled parts instead of raw text:</p>
+<pre>
+Raw:      https://www.example.com/search?q=nvda+addon
+Readable: Protocol: HTTPS. Domain: example dot com.
+          Path: search. Parameters: q equals nvda addon.
+</pre>
+
+<h2>Security Analysis (X and D keys)</h2>
+<p>Both <code>X</code> and <code>D</code> run the same full security check:</p>
+<ul>
+<li>Protocol: HTTPS (secure) / HTTP (not secure) / file (local) / FTP</li>
+<li>Domain name spoken clearly</li>
+<li>Warning if the page appears to be a login or authentication page</li>
+<li>Warning if the URL query string contains sensitive-sounding parameter names</li>
+<li>Warning if the domain is an IP address rather than a host name</li>
+<li>Warning if an unusual number of subdomains is present (phishing signal)</li>
+</ul>
+
+<h2>QR Code (Q key)</h2>
+<p>
+Pressing <code>Q</code> opens a QR code image of the current URL in your browser using the free
+<a href="https://goqr.me/api/">qrserver.com API</a>. No software installation required.
+Show the QR code to a phone camera to share the URL instantly.
+</p>
+
+<h2>How URL Reading Works</h2>
+<p>
+URL Announcer reads the browser URL by briefly simulating three key presses:
+<code>Ctrl+L</code> (focus address bar), <code>Ctrl+A</code> (select all), <code>Ctrl+C</code> (copy).
+It then reads the clipboard, restores your original clipboard content, and presses <code>Escape</code>
+to return focus to the page. This takes under one second and is transparent to the user.
+</p>
+<p>
+For Firefox, the addon automatically retries up to three times with increasing delays
+to account for Firefox's slower address-bar focus behaviour.
+</p>
+
+<div class="note">
+<strong>Clipboard restore:</strong> URL Announcer always saves and restores your clipboard content by default.
+If you disable this in Settings, the URL replaces whatever was in your clipboard.
+</div>
+
+<h2>Installation</h2>
+<ol>
+<li>Download <code>urlAnnouncer-3.0.0.nvda-addon</code>.</li>
+<li>Double-click the file. NVDA will ask to install it.</li>
+<li>Click <strong>Yes</strong>.</li>
+<li>Restart NVDA when prompted.</li>
+<li>Open any browser, navigate to a webpage, and press <code>NVDA+Shift+U</code>.</li>
+</ol>
+
+<h2>Changing the Entry Gesture</h2>
+<p>
+If <code>NVDA+Shift+U</code> conflicts with another add-on on your system, you can
+change it: go to <strong>NVDA Menu &rarr; Preferences &rarr; Input Gestures &rarr; URL Announcer</strong>
+and assign any gesture you prefer.
+</p>
+
+<h2>What&apos;s New in Version 3.0.0</h2>
+<ul>
+<li>URL History browser (R key)</li>
+<li>Persistent bookmarks — save (M) and browse (B)</li>
+<li>URL shortener via TinyURL (L key)</li>
+<li>Page title + URL announcement (T key)</li>
+<li>Email URL directly from NVDA (E key)</li>
+<li>Open URL in chosen browser (O key)</li>
+<li>Read URL from clipboard (P key)</li>
+<li>Extended domain safety check (D key)</li>
+<li>QR code generation (Q key)</li>
+<li>Full settings panel in NVDA Preferences</li>
+<li>Readable URL mode (Protocol / Domain / Path / Parameters)</li>
+<li>Auto-announce on page load (opt-in)</li>
+<li>Firefox retry loop for reliable URL reading</li>
+<li>Background update notifications</li>
+<li>Modular codebase — 7 Python modules for maintainability</li>
+</ul>
+
+<h2>About the Author</h2>
+<p>
+Tirupati Gaikwad is an <strong>NVDA Certified Professional (2025)</strong>
+passionate about building accessible technology for the blind and visually impaired community.<br>
+<strong>Email:</strong> <a href="mailto:ytirupatiygaikwad@gmail.com">ytirupatiygaikwad@gmail.com</a><br>
+<strong>Mobile:</strong> +91 99757 32046<br>
+<strong>Certification:</strong>
+<a href="https://certification.nvaccess.org/?query=tirupati&amp;country=IN&amp;submit=Search">
+NV Access Certification Registry — Tirupati Gaikwad, India</a>
+</p>
+
+</body>
+</html>

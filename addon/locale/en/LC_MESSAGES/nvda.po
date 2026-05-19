@@ -1,0 +1,287 @@
+# URL Announcer NVDA Add-on
+# Copyright (C) 2025 Tirupati Janardhan Gaikwad
+# This file is distributed under the same license as the urlAnnouncer package.
+# NVDA Certified Expert 2025
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: urlAnnouncer 3.0.0\n"
+"Report-Msgid-Bugs-To: ytirupatiygaikwad@gmail.com\n"
+"POT-Creation-Date: 2025-05-19 00:00+0000\n"
+"PO-Revision-Date: 2025-05-19 00:00+0000\n"
+"Last-Translator: Tirupati Janardhan Gaikwad <ytirupatiygaikwad@gmail.com>\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "URL Announcer command layer. After pressing, use: A announce, C copy, S share link, X security, W share menu, R history, M bookmark, B browse bookmarks, L shorten, T title, E email, O open in browser, P clipboard URL, D domain check, Q QR code, H help, Escape cancel."
+msgstr ""
+
+msgid "URL Announcer"
+msgstr ""
+
+msgid "URL Announcer layer active. A: announce URL. C: copy URL. S: share link. X: security. W: share menu. R: history. M: bookmark. B: browse bookmarks. L: shorten. T: title and URL. E: email. O: open in browser. P: clipboard URL. D: domain check. Q: QR code. H: help. Escape: cancel."
+msgstr ""
+
+msgid "URL Announcer cancelled."
+msgstr ""
+
+msgid "Cancelled."
+msgstr ""
+
+msgid "Share URL"
+msgstr ""
+
+msgid "URL:"
+msgstr ""
+
+msgid "Share to:"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Link copied to clipboard."
+msgstr ""
+
+msgid "Opening {platform}."
+msgstr ""
+
+msgid "URL History"
+msgstr ""
+
+msgid "Recent URLs (most recent first):"
+msgstr ""
+
+msgid "Announce"
+msgstr ""
+
+msgid "Copy URL"
+msgstr ""
+
+msgid "Open in Browser"
+msgstr ""
+
+msgid "Clear History"
+msgstr ""
+
+msgid "URL: "
+msgstr ""
+
+msgid "URL copied to clipboard."
+msgstr ""
+
+msgid "Opening URL in browser."
+msgstr ""
+
+msgid "URL history cleared."
+msgstr ""
+
+msgid "Save Bookmark"
+msgstr ""
+
+msgid "Bookmark name:"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Please enter a name for this bookmark."
+msgstr ""
+
+msgid "Bookmarks"
+msgstr ""
+
+msgid "Saved bookmarks:"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Announce"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Opening bookmark: {name}."
+msgstr ""
+
+msgid "Bookmark URL copied to clipboard."
+msgstr ""
+
+msgid "Bookmark {name}: {url}"
+msgstr ""
+
+msgid "Bookmark deleted: {name}."
+msgstr ""
+
+msgid "Open URL In Browser"
+msgstr ""
+
+msgid "Choose a browser:"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Opening in {browser}."
+msgstr ""
+
+msgid "Could not launch {browser}."
+msgstr ""
+
+msgid "No browser is active. Please switch to Chrome, Firefox, or Edge and try again."
+msgstr ""
+
+msgid "Could not read the URL. Make sure a webpage is open and the browser is fully loaded."
+msgstr ""
+
+msgid "URL Announcer update available: version {v}. Open the NVDA Add-on Store to update."
+msgstr ""
+
+msgid "Copy Link"
+msgstr ""
+
+msgid "YouTube share link copied: "
+msgstr ""
+
+msgid "Share link copied: "
+msgstr ""
+
+msgid "Shortening URL, please wait."
+msgstr ""
+
+msgid "Short URL copied to clipboard: "
+msgstr ""
+
+msgid "Could not shorten URL. Check your internet connection and try again."
+msgstr ""
+
+msgid "Page: {title}. URL: {url}"
+msgstr ""
+
+msgid "Opening email client with the URL."
+msgstr ""
+
+msgid "Could not open the email client."
+msgstr ""
+
+msgid "No supported browsers were found on this computer."
+msgstr ""
+
+msgid "The clipboard is empty."
+msgstr ""
+
+msgid "The clipboard does not contain a valid URL."
+msgstr ""
+
+msgid "Clipboard URL: "
+msgstr ""
+
+msgid "Generating QR code and opening in browser."
+msgstr ""
+
+msgid "URL history is empty. Browse some pages and press NVDA+Shift+U then R again."
+msgstr ""
+
+msgid "Bookmark saved: {name}."
+msgstr ""
+
+msgid "Bookmark updated: {name}."
+msgstr ""
+
+msgid "No bookmarks saved. Press NVDA+Shift+U then M to save the current URL."
+msgstr ""
+
+msgid "Announce current browser URL"
+msgstr ""
+
+msgid "Copy current browser URL to clipboard"
+msgstr ""
+
+msgid "Copy share link (YouTube: youtu.be short link)"
+msgstr ""
+
+msgid "Announce website security status and analysis"
+msgstr ""
+
+msgid "Open share menu (WhatsApp, Facebook, Telegram, Gmail, Twitter, LinkedIn)"
+msgstr ""
+
+msgid "Browse URL history from this session"
+msgstr ""
+
+msgid "Save current URL as a bookmark"
+msgstr ""
+
+msgid "Browse saved bookmarks"
+msgstr ""
+
+msgid "Shorten current URL using TinyURL and copy to clipboard"
+msgstr ""
+
+msgid "Announce page title and URL together"
+msgstr ""
+
+msgid "Open email client with current URL pre-filled"
+msgstr ""
+
+msgid "Open current URL in a chosen browser"
+msgstr ""
+
+msgid "Read and announce URL from the clipboard"
+msgstr ""
+
+msgid "Extended domain safety analysis"
+msgstr ""
+
+msgid "Generate QR code for current URL and open it in browser"
+msgstr ""
+
+msgid "Repeat URL Announcer help"
+msgstr ""
+
+msgid "Cancel the URL Announcer layer"
+msgstr ""
+
+msgid "Speech and announce options:"
+msgstr ""
+
+msgid "Speak URL in readable chunks (Protocol, Domain, Path, Parameters)"
+msgstr ""
+
+msgid "Include page title when announcing URL"
+msgstr ""
+
+msgid "Automatically announce URL each time a new page loads (browsers only)"
+msgstr ""
+
+msgid "Clipboard options:"
+msgstr ""
+
+msgid "Restore clipboard content after reading the URL"
+msgstr ""
+
+msgid "URL history options:"
+msgstr ""
+
+msgid "Maximum URLs to remember per session:"
+msgstr ""
+
+msgid "Security options:"
+msgstr ""
+
+msgid "Enable extended domain safety analysis"
+msgstr ""
+
+msgid "Update options:"
+msgstr ""
+
+msgid "Check for URL Announcer updates when NVDA starts"
+msgstr ""

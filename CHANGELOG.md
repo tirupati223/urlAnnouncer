@@ -1,39 +1,28 @@
-# Changelog — URL Announcer
+# Changelog
 
-All notable changes to URL Announcer are documented here.
+## v3.0.0 - May 2026
 
-## Version 3.0.0 — 2026-05-19
+This is the first public release. I built this from scratch after personally struggling with getting the URL of the current page in NVDA without losing my place on the page.
 
-### Added
-- Command layer (NVDA+Shift+U) with 16 sub-commands: A C S X W R M B L T E O P D Q H
-- URL history browser (R) — remembers last 5 / 10 / 20 / 50 URLs per session
-- Bookmark manager — save (M) and browse (B) named bookmarks
-- URL shortener (L) — shortens via TinyURL, copies result to clipboard
-- Share menu (W) — WhatsApp, Facebook, Telegram, Gmail, Twitter, LinkedIn
-- YouTube short link (S) — converts youtube.com/watch URLs to youtu.be format
-- QR code generator (Q) — opens QR code in browser
-- Email client (E) — opens mailto with current URL in body
-- Open in browser chooser (O) — pick from installed browsers
-- Clipboard URL reader (P) — reads and announces URL stored in clipboard
-- Quick security status (X) — one-line HTTPS / HTTP / file / FTP check
-- Deep domain safety analysis (D) — 9-point check for phishing indicators
-- Page title + URL announcement (T)
-- Readable URL mode — speaks URL in labelled parts (Protocol, Domain, Path, Parameters)
-- Auto-announce on page load (optional)
-- Include page title when announcing URL (optional)
-- Settings panel under NVDA Menu → Preferences → Settings → URL Announcer
-- Announce layer commands on/off (silent / expert mode)
-- URL action mode: announce only / copy and announce / copy silently
-- Restore clipboard after use (optional)
-- Update checker on startup (optional)
-- UI Automation URL fetch — no focus change, no keyboard simulation, ever
-- Layer auto-exit after 30 seconds — prevents stuck layer state
-- Full NVDA Addon Store compliance: locale, buildVars, manifest
-- Compatible with NVDA 2019.3 and later, tested on NVDA 2025.3
+What is included:
 
-### Browsers Supported
-Google Chrome, Microsoft Edge, Mozilla Firefox, Opera, Brave, Vivaldi,
-Internet Explorer, Waterfox, SeaMonkey, Pale Moon
-
-### Author
-Tirupati Janardhan Gaikwad — NVDA Certified Expert 2025
+- NVDA+Shift+U opens a command layer with 16 commands
+- A: speak the URL, C: copy it, S: copy a share link
+- YouTube URLs are automatically converted to short youtu.be links when you press S
+- W opens a share menu with WhatsApp, Facebook, Telegram, Gmail, Twitter and LinkedIn
+- R shows your URL history for the session
+- M saves the current URL as a named bookmark, B opens your bookmarks
+- L shortens the URL with TinyURL
+- T speaks the page title along with the URL
+- E opens your email with the URL ready in the body
+- O lets you pick which browser to open the URL in
+- P reads a URL from the clipboard
+- X gives a quick security check (HTTPS or plain HTTP)
+- D runs a deeper check on the domain for phishing signs
+- Q generates a QR code and opens it in the browser
+- H repeats all commands, Escape closes the layer
+- Settings panel in NVDA Preferences with options for readable URL mode, auto-announce, history size, action mode, and more
+- Works with Chrome, Edge, Firefox, Opera, Brave, Vivaldi and others
+- URL is read silently via Windows UI Automation - focus never moves to the address bar
+- Layer closes automatically after 30 seconds if you forget to press Escape
+- Tested on NVDA 2025.3, compatible back to 2019.3

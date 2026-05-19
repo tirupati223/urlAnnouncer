@@ -1,13 +1,7 @@
 # -*- coding: utf-8 -*-
-# URL Announcer -- URL Utility Functions  v3.2
-# Author: Tirupati Janardhan Gaikwad  (NVDA Certified Expert 2025)
-#
-# ARCHITECTURE RULES:
-#  1. UIA queries ALWAYS run on the wx/NVDA main thread -- never on background threads.
-#  2. Background workers signal the main thread via wx.CallAfter + threading.Event.
-#  3. The keyboard fallback (Ctrl+L) is PERMANENTLY REMOVED -- focus NEVER moves.
-#  4. All IUIAutomationElement references are discarded immediately after reading.
-#  5. Every COM call is wrapped in try/except -- stale proxies are silently skipped.
+# urlutils.py - helper functions for URL Announcer
+# Tirupati Janardhan Gaikwad
+# reads the browser URL using Windows UI Automation, no focus change, no keyboard tricks
 
 import ctypes
 import os
@@ -17,18 +11,12 @@ import threading
 import time
 from urllib.parse import urlparse, parse_qs, quote, unquote
 
-# ---------------------------------------------------------------------------
-# Supported browser executables
-# ---------------------------------------------------------------------------
 BROWSERS = frozenset({
     "chrome.exe", "msedge.exe", "firefox.exe", "opera.exe",
     "brave.exe", "vivaldi.exe", "iexplore.exe", "waterfox.exe",
     "seamonkey.exe", "palemoon.exe",
 })
 
-# ---------------------------------------------------------------------------
-# Win32 helpers  (clipboard only -- zero keyboard simulation ever)
-# ---------------------------------------------------------------------------
 CF_UNICODETEXT = 13
 GMEM_MOVEABLE  = 0x0002
 
@@ -95,9 +83,6 @@ def clip_set(text):
             pass
 
 
-# ---------------------------------------------------------------------------
-# URL validation
-# ---------------------------------------------------------------------------
 _URL_RE = re.compile(
     r'^(https?|ftp|file)://'
     r'[A-Za-z0-9\-._~:/?#\[\]@!$&\'()*+,;=%]+'
@@ -112,9 +97,6 @@ def validate_url(text):
     return bool(_URL_RE.match(text.strip()))
 
 
-# ---------------------------------------------------------------------------
-# UIA constants  (standard Windows values)
-# ---------------------------------------------------------------------------
 _UIA_AutomationIdPropertyId = 30011
 _UIA_ValueValuePropertyId   = 30045   # ValuePattern.Value (edit field text)
 _UIA_NamePropertyId         = 30005   # Name property
@@ -127,9 +109,6 @@ _TreeScope_Descendants      = 4       # Search all descendants
 _ADDR_IDS = ("omnibox", "urlbar-input", "urlbar", "addressEditBox", "address", "url")
 
 
-# ---------------------------------------------------------------------------
-# Main-thread UIA dispatch
-# ---------------------------------------------------------------------------
 
 def _uia_query_on_main_thread():
     """
@@ -244,9 +223,6 @@ def _try_read_addr_bar(client, root, automation_id):
         return ""
 
 
-# ---------------------------------------------------------------------------
-# Public API: fetch_url
-# ---------------------------------------------------------------------------
 
 def fetch_url(restore_clipboard=True):
     """
@@ -259,9 +235,6 @@ def fetch_url(restore_clipboard=True):
     return _uia_query_on_main_thread()
 
 
-# ---------------------------------------------------------------------------
-# URL analysis helpers
-# ---------------------------------------------------------------------------
 
 def parse_url_readable(url):
     """

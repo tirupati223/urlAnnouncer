@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
-# URL Announcer — NVDA Global Plugin  v3.1
-# Author : Tirupati Janardhan Gaikwad <ytirupatiygaikwad@gmail.com>
+# URL Announcer - NVDA add-on
+# Tirupati Janardhan Gaikwad <ytirupatiygaikwad@gmail.com>
 # NVDA Certified Expert 2025
 # License: GPL-2
-#
-# KEY DESIGN RULES:
-#  1. URL is read via UI Automation — NO Ctrl+L, NO focus change, EVER.
-#  2. Every network / file operation runs in a daemon thread — NVDA never freezes.
-#  3. Every UI dialog uses wx.CallAfter — thread-safe.
-#  4. Layer auto-exits after 30 seconds to prevent stuck state.
 
 import os
 import time
@@ -35,9 +29,6 @@ except ImportError:
 # Must be called once at module level — makes _() available everywhere.
 addonHandler.initTranslation()
 
-# ---------------------------------------------------------------------------
-# Submodule imports  (after initTranslation so _() is available)
-# ---------------------------------------------------------------------------
 from . import _cfg
 from .history   import UrlHistory
 from .bookmarks import BookmarkManager
@@ -46,9 +37,6 @@ from .bookmarks import BookmarkManager
 _history   = UrlHistory(maxlen=_cfg.data.get("history_size", 10))
 _bookmarks = BookmarkManager()
 
-# ---------------------------------------------------------------------------
-# Share platform definitions
-# ---------------------------------------------------------------------------
 _PLATFORMS = [
 	("WhatsApp",  "https://wa.me/?text={url}"),
 	("Facebook",  "https://www.facebook.com/sharer/sharer.php?u={url}"),
@@ -338,10 +326,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		"kb:escape": "layer_esc",
 	}
 
-	# ------------------------------------------------------------------
-	# Lifecycle
-	# ------------------------------------------------------------------
-
+		# Lifecycle
+	
 	def __init__(self, *args, **kwargs):
 		try:
 			super().__init__(*args, **kwargs)
@@ -368,10 +354,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			logHandler.log.exception("URL Announcer: error in terminate")
 		super().terminate()
 
-	# ------------------------------------------------------------------
-	# Auto-announce on page load  (opt-in via settings)
-	# ------------------------------------------------------------------
-
+		# Auto-announce on page load  (opt-in via settings)
+	
 	def event_documentLoadComplete(self, obj, nextHandler):
 		nextHandler()
 		if _cfg.data.get("auto_announce", False):
@@ -392,10 +376,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			spoken = parse_url_readable(url) if _cfg.data.get("readable_mode", False) else url
 			wx.CallAfter(ui.message, spoken)
 
-	# ------------------------------------------------------------------
-	# Update notification
-	# ------------------------------------------------------------------
-
+		# Update notification
+	
 	def _on_update_result(self, new_version):
 		if new_version:
 			wx.CallAfter(
@@ -404,10 +386,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				  "Open the NVDA Add-on Store to update.").format(v=new_version),
 			)
 
-	# ------------------------------------------------------------------
-	# Layer management
-	# ------------------------------------------------------------------
-
+		# Layer management
+	
 	def _enter_layer(self):
 		self._layer = True
 		for gesture, name in self._LAYER_GESTURES.items():
@@ -467,10 +447,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if self._layer:
 			wx.CallAfter(self._exit_layer)
 
-	# ------------------------------------------------------------------
-	# Entry-point gesture  (always active)
-	# ------------------------------------------------------------------
-
+		# Entry-point gesture  (always active)
+	
 	@script(
 		gesture="kb:NVDA+shift+u",
 		description=_("URL Announcer command layer. Press then A announce, C copy, "
@@ -486,10 +464,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		else:
 			self._enter_layer()
 
-	# ------------------------------------------------------------------
-	# Layer scripts — bound dynamically while layer is open
-	# ------------------------------------------------------------------
-
+		# Layer scripts — bound dynamically while layer is open
+	
 	def script_layer_h(self, gesture):
 		ui.message(_(
 			"URL Announcer commands: "
@@ -594,10 +570,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		threading.Thread(target=self._do_qr_code, daemon=True, name="UA-qr").start()
 	script_layer_q.__doc__ = _("Generate QR code for current URL")
 
-	# ------------------------------------------------------------------
-	# Browser / URL check  (called from every action method)
-	# ------------------------------------------------------------------
-
+		# Browser / URL check  (called from every action method)
+	
 	def _check_browser(self):
 		"""
 		Verify a browser is active and fetch its URL via UI Automation.
@@ -618,10 +592,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			)
 		return url, None
 
-	# ------------------------------------------------------------------
-	# Actions  (all run in daemon background threads)
-	# ------------------------------------------------------------------
-
+		# Actions  (all run in daemon background threads)
+	
 	def _do_announce(self):
 		try:
 			url, err = self._check_browser()
@@ -847,10 +819,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		except Exception:
 			logHandler.log.exception("URL Announcer: error in _do_qr_code")
 
-	# ------------------------------------------------------------------
-	# Dialog helpers  (called via wx.CallAfter from background threads)
-	# ------------------------------------------------------------------
-
+		# Dialog helpers  (called via wx.CallAfter from background threads)
+	
 	def _show_modal(self, dialog_class, *args):
 		dlg = dialog_class(gui.mainFrame, *args)
 		gui.mainFrame.prePopup()

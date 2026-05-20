@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # urlutils.py - URL utility functions for URL Announcer
 # Tirupati Janardhan Gaikwad
-# All browser URL reading is done via Windows UI Automation.
-# No keyboard simulation. No focus change. No clipboard tricks.
 
 import ctypes
 import os
@@ -21,7 +19,7 @@ BROWSERS = frozenset({
 })
 
 # ---------------------------------------------------------------------------
-# Win32 clipboard constants (used only for clip_get / clip_set)
+# Win32 clipboard constants
 # ---------------------------------------------------------------------------
 _CF_UNICODETEXT = 13
 _GMEM_MOVEABLE  = 0x0002
@@ -120,42 +118,39 @@ def validate_url(text):
 
 
 # ---------------------------------------------------------------------------
-# Windows UI Automation — address-bar reading
+# Windows UI Automation — address-bar reading (fast attempt, no focus change)
 # ---------------------------------------------------------------------------
-# Property IDs from the Windows SDK UIA header (uiautomationclient.h).
-# These are stable across all Windows 10 / 11 versions.
-_UIA_AutomationIdPropertyId = 30011   # AutomationId property
-_UIA_ValueValuePropertyId   = 30045   # ValuePattern.Value (edit text)
-_UIA_NamePropertyId         = 30005   # Name property
-_TreeScope_Descendants      = 4       # Search all descendants
+_UIA_AutomationIdPropertyId  = 30011
+_UIA_ValueValuePropertyId    = 30045
+_UIA_NamePropertyId          = 30005
+_UIA_ControlTypePropertyId   = 30003
+_UIA_ControlType_Edit        = 50004
+_TreeScope_Descendants       = 4
 
-# Address-bar AutomationIds per browser family:
-#   Chrome / Edge / Brave / Opera / Vivaldi  →  "omnibox"
-#   Firefox                                  →  "urlbar-input" (or "urlbar")
-#   Internet Explorer                        →  "addressEditBox"
-_ADDR_IDS = ("omnibox", "urlbar-input", "urlbar", "addressEditBox", "address", "url")
+_ADDR_IDS = ("omnibox", "urlbar-input", "urlbar", "addressEditBox", "address", "url",
+             "addressBar", "urlBar", "location", "locationBar")
 
 
-def _fetch_url_uia_safe():
+def fetch_url_uia():
     """
-    Read the current browser URL using Windows UI Automation.
-
-    MUST be called on the NVDA/wx main thread (STA) to avoid COM
-    cross-apartment failures.  Returns URL string or '' on any error.
+    Try to read the browser URL via Windows UI Automation.
+    Returns URL string or '' if UIA is unavailable or returns nothing.
+    Must be called on the NVDA main thread.
     """
     try:
         import UIAHandler
     except ImportError:
         return ""
 
-    # Resolve the UIA client object — attribute name varies across NVDA versions.
-    client  = None
     handler = getattr(UIAHandler, "handler", None)
-    if handler is not None:
-        for attr in ("clientObject", "client", "IUIAutomationObject", "automation"):
-            client = getattr(handler, attr, None)
-            if client is not None:
-                break
+    if handler is None:
+        return ""
+
+    client = None
+    for attr in ("clientObject", "client", "IUIAutomationObject", "automation", "uiAutomation"):
+        client = getattr(handler, attr, None)
+        if client is not None:
+            break
 
     if client is None:
         return ""
@@ -172,118 +167,62 @@ def _fetch_url_uia_safe():
     if root is None:
         return ""
 
+    # Pass 1 — search by known AutomationIds.
     for aid in _ADDR_IDS:
-        url = _try_read_addr_bar(client, root, aid)
+        url = _try_by_id(client, root, aid)
         if url:
             return url
 
-    return ""
+    # Pass 2 — scan ALL Edit controls; return the first one containing a valid URL.
+    return _scan_edits_for_url(client, root)
 
 
-def _try_read_addr_bar(client, root, automation_id):
-    """
-    Find an element by AutomationId and return its text value.
-    Returns URL string or '' on any failure.
-    Element reference goes out of scope immediately — no stale proxy accumulation.
-    """
+def _try_by_id(client, root, automation_id):
+    """Find an element by AutomationId and return its URL value."""
     try:
         cond = client.CreatePropertyCondition(_UIA_AutomationIdPropertyId, automation_id)
         el   = root.FindFirst(_TreeScope_Descendants, cond)
         if el is None:
             return ""
-        # Value property is most reliable for edit/combo fields.
-        try:
-            val = el.GetCurrentPropertyValue(_UIA_ValueValuePropertyId)
-            if isinstance(val, str) and validate_url(val.strip()):
-                return val.strip()
-        except Exception:
-            pass
-        # Some browser versions expose the URL via the Name property instead.
-        try:
-            val = el.GetCurrentPropertyValue(_UIA_NamePropertyId)
-            if isinstance(val, str) and validate_url(val.strip()):
-                return val.strip()
-        except Exception:
-            pass
+        for prop in (_UIA_ValueValuePropertyId, _UIA_NamePropertyId):
+            try:
+                val = el.GetCurrentPropertyValue(prop)
+                if isinstance(val, str) and validate_url(val.strip()):
+                    return val.strip()
+            except Exception:
+                pass
         return ""
     except Exception:
         return ""
 
 
-def _is_main_thread():
-    """Return True if the caller is running on the wx/NVDA main thread."""
+def _scan_edits_for_url(client, root):
+    """Scan all Edit controls in the window for a URL-valued one."""
     try:
-        import wx
-        return wx.IsMainThread()
+        cond     = client.CreatePropertyCondition(_UIA_ControlTypePropertyId, _UIA_ControlType_Edit)
+        elements = root.FindAll(_TreeScope_Descendants, cond)
+        if elements is None:
+            return ""
+        count = getattr(elements, "Length", 0)
+        for i in range(min(count, 30)):   # Cap at 30 to avoid slow scans
+            try:
+                el = elements.GetElement(i)
+                for prop in (_UIA_ValueValuePropertyId, _UIA_NamePropertyId):
+                    try:
+                        val = el.GetCurrentPropertyValue(prop)
+                        if isinstance(val, str) and validate_url(val.strip()):
+                            return val.strip()
+                    except Exception:
+                        pass
+            except Exception:
+                continue
     except Exception:
-        return threading.current_thread() is threading.main_thread()
-
-
-def fetch_url():
-    """
-    Return the current browser URL via UI Automation.
-
-    Safe to call from any thread.  If called from a background thread the
-    query is dispatched to the main thread (where COM lives) and we wait up
-    to 500 ms for the result.  If called directly on the main thread the
-    query runs inline with no threading overhead.
-
-    Returns URL string, or '' if unavailable.
-    """
-    if _is_main_thread():
-        # Direct call — no threading, no timeout risk.
-        return _fetch_url_uia_safe()
-
-    # Background thread — dispatch to main thread via wx event loop.
-    import wx
-
-    result   = [""]
-    done_evt = threading.Event()
-
-    def _on_main():
-        try:
-            result[0] = _fetch_url_uia_safe()
-        except Exception:
-            result[0] = ""
-        finally:
-            done_evt.set()
-
-    wx.CallAfter(_on_main)
-    # 500 ms gives the main thread comfortable time even on loaded systems.
-    done_evt.wait(timeout=0.50)
-    return result[0]
+        pass
+    return ""
 
 
 def get_page_title():
-    """
-    Return the foreground window title via NVDA's api module.
-
-    Safe to call from any thread — dispatches to main thread when needed.
-    Returns string or ''.
-    """
-    if _is_main_thread():
-        return _fetch_title_safe()
-
-    import wx
-
-    result   = [""]
-    done_evt = threading.Event()
-
-    def _on_main():
-        try:
-            result[0] = _fetch_title_safe()
-        except Exception:
-            result[0] = ""
-        finally:
-            done_evt.set()
-
-    wx.CallAfter(_on_main)
-    done_evt.wait(timeout=0.30)
-    return result[0]
-
-
-def _fetch_title_safe():
-    """Read the foreground object name via NVDA api. Must run on main thread."""
+    """Return the foreground window name via NVDA api. Call from main thread."""
     try:
         import api
         obj = api.getForegroundObject()
@@ -300,10 +239,7 @@ def _fetch_title_safe():
 # ---------------------------------------------------------------------------
 
 def parse_url_readable(url):
-    """
-    Break a URL into spoken labelled parts.
-    Example: Protocol: HTTPS. Domain: google dot com. Path: search.
-    """
+    """Break a URL into spoken labelled parts."""
     try:
         p     = urlparse(url)
         parts = []
@@ -350,7 +286,7 @@ def parse_url_readable(url):
 # ---------------------------------------------------------------------------
 
 def get_quick_security(url):
-    """One-line instant security status for the X command."""
+    """One-line instant security status."""
     try:
         p      = urlparse(url)
         scheme = p.scheme.lower()
@@ -370,7 +306,7 @@ def get_quick_security(url):
 
 
 def get_security_info(url):
-    """Deep domain safety analysis for the D command."""
+    """Deep domain safety analysis."""
     try:
         p      = urlparse(url)
         scheme = p.scheme.lower()
@@ -400,11 +336,11 @@ def get_security_info(url):
 
         sensitive = ["password", "passwd", "token", "secret", "ssn", "key", "apikey", "api_key"]
         if any(k in query for k in sensitive):
-            lines.append("Security risk: URL contains sensitive data in query string. Do not share this URL.")
+            lines.append("Security risk: URL contains sensitive data in query string.")
             warn += 1
 
         if re.match(r'^\d{1,3}(\.\d{1,3}){3}$', domain):
-            lines.append("Suspicious: raw IP address domain. Legitimate sites rarely use this.")
+            lines.append("Suspicious: raw IP address domain.")
             warn += 1
 
         parts = domain.split(".")
@@ -440,7 +376,7 @@ def get_security_info(url):
 # ---------------------------------------------------------------------------
 
 def youtube_short(url):
-    """Convert a YouTube watch URL to a youtu.be short link, preserving timestamp."""
+    """Convert a YouTube watch URL to a youtu.be short link."""
     m = re.search(r"[?&]v=([A-Za-z0-9_\-]{11})", url)
     if not m:
         return None
@@ -481,7 +417,7 @@ def open_url(url):
 
 
 def shorten_url(url):
-    """Shorten a URL via TinyURL (free, no API key required). Returns short URL or None."""
+    """Shorten a URL via TinyURL. Returns short URL or None."""
     try:
         import urllib.request
         api_url = "https://tinyurl.com/api-create.php?url=" + urlencode(url)
@@ -501,7 +437,6 @@ def shorten_url(url):
 def get_installed_browsers():
     """
     Return a list of (display_name, exe_path) for browsers found in the Windows registry.
-    Checks both HKLM and HKCU so per-user installs are found too.
     """
     results = []
     try:

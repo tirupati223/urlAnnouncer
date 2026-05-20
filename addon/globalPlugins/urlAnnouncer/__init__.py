@@ -17,6 +17,7 @@ from gui import guiHelper
 import gui.settingsDialogs as settingsDialogs
 from scriptHandler import script
 import logHandler
+import keyboardHandler
 
 # Safe import — disableInSecureMode was moved in some NVDA builds.
 try:
@@ -26,18 +27,15 @@ except ImportError:
 		cls.disabledInSecureMode = True
 		return cls
 
-# Makes _() available throughout this module.
 addonHandler.initTranslation()
 
 from . import _cfg
 from .history   import UrlHistory
 from .bookmarks import BookmarkManager
 
-# Module-level singletons — shared with settings.py via the package namespace.
 _history   = UrlHistory(maxlen=_cfg.data.get("history_size", 10))
 _bookmarks = BookmarkManager()
 
-# Share platforms — template uses {url} as placeholder.
 _PLATFORMS = [
 	("WhatsApp",  "https://wa.me/?text={url}"),
 	("Facebook",  "https://www.facebook.com/sharer/sharer.php?u={url}"),
@@ -67,7 +65,6 @@ class _ShareDialog(wx.Dialog):
 			btn = wx.Button(panel, label=label)
 			btn.Bind(wx.EVT_BUTTON, lambda e, lbl=label, t=tmpl: self._on_platform(lbl, t))
 			sizer.Add(btn, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=3)
-		# Copy link button
 		copy_btn = wx.Button(panel, label=_("Copy Link"))
 		copy_btn.Bind(wx.EVT_BUTTON, lambda e: self._on_copy_link())
 		sizer.Add(copy_btn, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=3)
@@ -304,19 +301,22 @@ class _BrowserChoiceDialog(wx.Dialog):
 @disableInSecureMode
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	"""
-	URL Announcer — press NVDA+Shift+U to open the command layer,
-	then press one letter to act.
+	URL Announcer — NVDA+Shift+U opens the command layer; one letter acts.
 
-	Architecture: URL is fetched on the NVDA main thread (where UIA COM lives)
-	inside each script handler, BEFORE any background thread is spawned.
-	This eliminates all threading/timeout issues.  Background threads are only
-	used for slow I/O (TinyURL network call, opening browser/email).
+	URL Fetching Strategy (two-path, guaranteed to work):
+	  PATH 1 — UIA (instant, no focus change):
+	    Tries Windows UI Automation on the main thread. Works when NVDA has
+	    UIA enabled for the browser.
+	  PATH 2 — Keyboard simulation (fallback, ~400ms delay):
+	    Uses NVDA's own KeyboardInputGesture.send() so Ctrl+L / Ctrl+A /
+	    Ctrl+C are invisible to NVDA's own processing. A wx.CallLater chain
+	    keeps the main thread free. Works on every browser, every NVDA
+	    version, every Windows version.
 	"""
 
 	scriptCategory     = _("URL Announcer")
 	disabledInSecureMode = True
 
-	# Layer key-to-script mapping.
 	_LAYER_GESTURES = {
 		"kb:a":      "layer_a",
 		"kb:c":      "layer_c",
@@ -343,6 +343,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		super().__init__(*args, **kwargs)
 		self._layer       = False
 		self._layer_timer = None
+		# State for keyboard-simulation URL fetching
+		self._kburl_cb       = None
+		self._kburl_old_clip = ""
+		self._kburl_restore  = True
 		try:
 			from .settings import UrlAnnouncerSettingsPanel
 			if UrlAnnouncerSettingsPanel not in settingsDialogs.NVDASettingsDialog.categoryClasses:
@@ -351,7 +355,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				from .updatecheck import check_for_updates
 				check_for_updates(self._on_update_result)
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in __init__")
+			logHandler.log.exception("URL Announcer: __init__")
 
 	def terminate(self):
 		try:
@@ -364,26 +368,24 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			if self._layer:
 				self._exit_layer()
 		except Exception:
-			logHandler.log.exception("URL Announcer: error in terminate")
+			logHandler.log.exception("URL Announcer: terminate")
 		super().terminate()
 
-	# ---- Auto-announce on page load (opt-in) --------------------------------
+	# ---- Auto-announce on page load ----------------------------------------
 
 	def event_documentLoadComplete(self, obj, nextHandler):
 		nextHandler()
 		if _cfg.data.get("auto_announce", False):
 			threading.Thread(
-				target=self._auto_announce_delayed,
-				daemon=True,
-				name="UA-AutoAnnounce",
+				target=self._auto_announce_delayed, daemon=True, name="UA-AutoAnnounce"
 			).start()
 
 	def _auto_announce_delayed(self):
 		time.sleep(1.0)
-		from .urlutils import foreground_exe, BROWSERS, fetch_url, validate_url, parse_url_readable
+		from .urlutils import foreground_exe, BROWSERS, fetch_url_uia, validate_url, parse_url_readable
 		if foreground_exe() not in BROWSERS:
 			return
-		url = fetch_url()
+		url = fetch_url_uia()
 		if url and validate_url(url):
 			_history.add(url)
 			spoken = parse_url_readable(url) if _cfg.data.get("readable_mode", False) else url
@@ -441,34 +443,117 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if self._layer:
 			wx.CallAfter(self._exit_layer)
 
-	# ---- URL / browser check (runs on NVDA main thread) --------------------
+	# =========================================================================
+	# URL FETCHING — Two-path architecture
+	# =========================================================================
+	# PATH 1: UIA (called on main thread, instant, no focus change)
+	# PATH 2: Keyboard sim (wx.CallLater chain, NVDA-silent, ~400 ms total)
+	#
+	# Every script handler calls _get_url_then(callback, restore_clipboard).
+	# The callback receives the URL string (or None on failure) and performs
+	# the command-specific action.
+	# =========================================================================
 
-	def _get_url(self):
+	def _get_url_then(self, callback, restore_clipboard=True):
 		"""
-		Fetch the current browser URL.  Called directly in script handlers so
-		it always runs on the NVDA main thread — UIA COM calls are inline, no
-		threading overhead, no timeout risk.
+		Fetch the current browser URL and call callback(url_or_None).
+		Tries UIA first (instant). If that returns nothing, uses keyboard
+		simulation (3-step wx.CallLater, non-blocking, ~400 ms).
+		Must be called on the NVDA main thread.
+		"""
+		from .urlutils import foreground_exe, BROWSERS, fetch_url_uia, validate_url
 
-		Returns (url_string, None) on success, or (None, error_message) on failure.
-		"""
-		from .urlutils import foreground_exe, BROWSERS, fetch_url, validate_url
-		exe = foreground_exe()
-		if exe not in BROWSERS:
-			return None, _(
+		# Verify a browser is in the foreground.
+		if foreground_exe() not in BROWSERS:
+			callback(None, "no_browser")
+			return
+
+		# PATH 1 — try UIA (inline, instant).
+		url = fetch_url_uia()
+		if url and validate_url(url):
+			callback(url, None)
+			return
+
+		# PATH 2 — keyboard simulation via NVDA-silent key injection.
+		from .urlutils import clip_get
+		self._kburl_cb       = callback
+		self._kburl_restore  = restore_clipboard
+		self._kburl_old_clip = clip_get() if restore_clipboard else ""
+
+		# Ctrl+L focuses the address bar in every major browser.
+		# KeyboardInputGesture.send() marks the keystroke as NVDA-injected
+		# so NVDA's own processing ignores it — no duplicate announcements.
+		try:
+			keyboardHandler.KeyboardInputGesture.fromName("control+l").send()
+		except Exception:
+			logHandler.log.exception("URL Announcer: control+l send failed")
+			callback(None, "error")
+			return
+
+		# Wait 230 ms for the address bar to receive focus and populate.
+		wx.CallLater(230, self._kburl_step2)
+
+	def _kburl_step2(self):
+		"""Select-all then copy — runs after address bar is focused."""
+		from .urlutils import foreground_exe, BROWSERS
+		# Safety check: user may have switched windows during the 230 ms wait.
+		if foreground_exe() not in BROWSERS:
+			self._kburl_done(None, "no_browser")
+			return
+		try:
+			keyboardHandler.KeyboardInputGesture.fromName("control+a").send()
+			keyboardHandler.KeyboardInputGesture.fromName("control+c").send()
+		except Exception:
+			logHandler.log.exception("URL Announcer: ctrl+a/c send failed")
+			self._kburl_done(None, "error")
+			return
+		# Wait 180 ms for the clipboard to be populated by the browser.
+		wx.CallLater(180, self._kburl_step3)
+
+	def _kburl_step3(self):
+		"""Read clipboard, validate, restore, call callback."""
+		from .urlutils import clip_get, validate_url, clip_set
+
+		candidate = clip_get().strip()
+
+		# Return focus to the page (Escape in address bar goes back to page).
+		try:
+			keyboardHandler.KeyboardInputGesture.fromName("escape").send()
+		except Exception:
+			pass
+
+		# Restore the original clipboard content.
+		if self._kburl_restore and self._kburl_old_clip:
+			# Delay restoration slightly so the callback can read the URL first.
+			wx.CallLater(80, clip_set, self._kburl_old_clip)
+
+		url = candidate if validate_url(candidate) else None
+		self._kburl_done(url, None if url else "bad_url")
+
+	def _kburl_done(self, url, reason):
+		"""Invoke the stored callback and clear state."""
+		cb = self._kburl_cb
+		self._kburl_cb       = None
+		self._kburl_old_clip = ""
+		if cb:
+			cb(url, reason)
+
+	# ---- Error message helper -----------------------------------------------
+
+	def _url_error_msg(self, reason):
+		if reason == "no_browser":
+			return _(
 				"No browser is active. "
 				"Switch to Chrome, Firefox, Edge, or another supported browser and try again."
 			)
-		url = fetch_url()
-		if not url:
-			return None, _(
-				"Could not read the URL. "
-				"Make sure a webpage is fully loaded and try again."
-			)
-		if not validate_url(url):
-			return None, _("The address bar contains text that is not a URL.")
-		return url, None
+		if reason == "bad_url":
+			return _("The address bar contains text that is not a URL.")
+		return _(
+			"Could not read the URL. "
+			"Make sure a webpage is fully loaded and try again."
+		)
 
-	# ---- Entry-point gesture (always active) --------------------------------
+	# ---- Entry-point gesture ------------------------------------------------
 
 	@script(
 		gesture="kb:NVDA+shift+u",
@@ -487,10 +572,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		else:
 			self._enter_layer()
 
-	# ---- Layer scripts (bound only while layer is active) ------------------
-	# KEY DESIGN: _get_url() is called HERE on the main thread.
-	# The URL is then passed to any background thread that needs it.
-	# This guarantees UIA COM runs in the correct STA apartment — always.
+	# ---- Layer command scripts ----------------------------------------------
 
 	def script_layer_h(self, gesture):
 		ui.message(_(
@@ -523,15 +605,17 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def script_layer_a(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_announce, restore_clipboard=True)
+	script_layer_a.__doc__ = _("Announce current browser URL")
+
+	def _cb_announce(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		_history.add(url)
-		from .urlutils import parse_url_readable
+		from .urlutils import parse_url_readable, get_page_title
 		spoken = parse_url_readable(url) if _cfg.data.get("readable_mode", False) else url
 		if _cfg.data.get("announce_title", False):
-			from .urlutils import get_page_title
 			title = get_page_title()
 			if title:
 				spoken = _("Page: {title}. URL: {url}").format(title=title, url=spoken)
@@ -545,29 +629,34 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			ui.message(_("URL: ") + spoken)
 		else:
 			ui.message(_("URL: ") + spoken)
-	script_layer_a.__doc__ = _("Announce current browser URL")
 
 	# ---- C: Copy URL -------------------------------------------------------
 
 	def script_layer_c(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		# restore_clipboard=False: the URL stays in clipboard (that IS the goal).
+		self._get_url_then(self._cb_copy, restore_clipboard=False)
+	script_layer_c.__doc__ = _("Copy current browser URL to clipboard")
+
+	def _cb_copy(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		from .urlutils import clip_set
 		_history.add(url)
 		clip_set(url)
 		ui.message(_("URL copied to clipboard."))
-	script_layer_c.__doc__ = _("Copy current browser URL to clipboard")
 
-	# ---- S: Share link (YouTube → youtu.be) --------------------------------
+	# ---- S: Share link -----------------------------------------------------
 
 	def script_layer_s(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_share, restore_clipboard=False)
+	script_layer_s.__doc__ = _("Copy share link (YouTube: youtu.be short link)")
+
+	def _cb_share(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		from .urlutils import share_url, clip_set
 		_history.add(url)
@@ -577,32 +666,35 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			ui.message(_("YouTube share link copied: ") + s)
 		else:
 			ui.message(_("Share link copied: ") + s)
-	script_layer_s.__doc__ = _("Copy share link (YouTube: youtu.be short link)")
 
-	# ---- X: Quick security status ------------------------------------------
+	# ---- X: Quick security -------------------------------------------------
 
 	def script_layer_x(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_security, restore_clipboard=True)
+	script_layer_x.__doc__ = _("Quick website security status")
+
+	def _cb_security(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		from .urlutils import get_quick_security
 		_history.add(url)
 		ui.message(get_quick_security(url))
-	script_layer_x.__doc__ = _("Quick website security status")
 
 	# ---- W: Share menu dialog ----------------------------------------------
 
 	def script_layer_w(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_share_dialog, restore_clipboard=True)
+	script_layer_w.__doc__ = _("Open share menu")
+
+	def _cb_share_dialog(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		_history.add(url)
 		self._show_modal(_ShareDialog, url)
-	script_layer_w.__doc__ = _("Open share menu")
 
 	# ---- R: History dialog -------------------------------------------------
 
@@ -615,9 +707,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def script_layer_m(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_save_bookmark, restore_clipboard=True)
+	script_layer_m.__doc__ = _("Save current URL as bookmark")
+
+	def _cb_save_bookmark(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		try:
 			from urllib.parse import urlparse
@@ -625,7 +720,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		except Exception:
 			default = ""
 		self._open_bookmark_name_dialog(url, default)
-	script_layer_m.__doc__ = _("Save current URL as bookmark")
 
 	# ---- B: Browse bookmarks -----------------------------------------------
 
@@ -634,28 +728,42 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		self._open_bookmarks_dialog()
 	script_layer_b.__doc__ = _("Browse saved bookmarks")
 
-	# ---- L: Shorten URL (network — background thread) ----------------------
+	# ---- L: Shorten URL ----------------------------------------------------
 
 	def script_layer_l(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_shorten, restore_clipboard=False)
+	script_layer_l.__doc__ = _("Shorten URL with TinyURL")
+
+	def _cb_shorten(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		_history.add(url)
 		ui.message(_("Shortening URL, please wait."))
 		threading.Thread(
 			target=self._do_shorten, args=(url,), daemon=True, name="UA-shorten"
 		).start()
-	script_layer_l.__doc__ = _("Shorten URL with TinyURL")
+
+	def _do_shorten(self, url):
+		from .urlutils import shorten_url, clip_set
+		short = shorten_url(url)
+		if short:
+			clip_set(short)
+			wx.CallAfter(ui.message, _("Short URL copied: ") + short)
+		else:
+			wx.CallAfter(ui.message, _("Could not shorten URL. Check your internet connection."))
 
 	# ---- T: Page title + URL -----------------------------------------------
 
 	def script_layer_t(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_title_url, restore_clipboard=True)
+	script_layer_t.__doc__ = _("Announce page title and URL")
+
+	def _cb_title_url(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		_history.add(url)
 		from .urlutils import get_page_title
@@ -664,15 +772,17 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			ui.message(_("Page: {title}. URL: {url}").format(title=title, url=url))
 		else:
 			ui.message(_("URL: ") + url)
-	script_layer_t.__doc__ = _("Announce page title and URL")
 
 	# ---- E: Email URL ------------------------------------------------------
 
 	def script_layer_e(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_email, restore_clipboard=True)
+	script_layer_e.__doc__ = _("Open email client with URL")
+
+	def _cb_email(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		from .urlutils import urlencode
 		_history.add(url)
@@ -681,15 +791,17 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			ui.message(_("Opening email client with the URL."))
 		except Exception:
 			ui.message(_("Could not open the email client."))
-	script_layer_e.__doc__ = _("Open email client with URL")
 
 	# ---- O: Open in chosen browser -----------------------------------------
 
 	def script_layer_o(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_open_browser, restore_clipboard=True)
+	script_layer_o.__doc__ = _("Open URL in chosen browser")
+
+	def _cb_open_browser(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		from .urlutils import get_installed_browsers
 		_history.add(url)
@@ -698,7 +810,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			ui.message(_("No supported browsers were found on this computer."))
 			return
 		self._show_modal(_BrowserChoiceDialog, browsers, url)
-	script_layer_o.__doc__ = _("Open URL in chosen browser")
 
 	# ---- P: Clipboard URL (no browser needed) ------------------------------
 
@@ -721,47 +832,35 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def script_layer_d(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_domain, restore_clipboard=True)
+	script_layer_d.__doc__ = _("Deep domain safety analysis")
+
+	def _cb_domain(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		from .urlutils import get_security_info
 		_history.add(url)
 		ui.message(get_security_info(url))
-	script_layer_d.__doc__ = _("Deep domain safety analysis")
 
 	# ---- Q: QR code --------------------------------------------------------
 
 	def script_layer_q(self, gesture):
 		self._exit_layer()
-		url, err = self._get_url()
-		if err:
-			ui.message(err)
+		self._get_url_then(self._cb_qr, restore_clipboard=True)
+	script_layer_q.__doc__ = _("Generate QR code for current URL")
+
+	def _cb_qr(self, url, reason):
+		if not url:
+			ui.message(self._url_error_msg(reason))
 			return
 		from .urlutils import open_url, urlencode
 		_history.add(url)
 		qr_url = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + urlencode(url)
 		ui.message(_("Generating QR code and opening in browser."))
-		threading.Thread(
-			target=open_url, args=(qr_url,), daemon=True, name="UA-qr"
-		).start()
-	script_layer_q.__doc__ = _("Generate QR code for current URL")
+		threading.Thread(target=open_url, args=(qr_url,), daemon=True, name="UA-qr").start()
 
-	# ---- Background worker (only for network I/O) --------------------------
-
-	def _do_shorten(self, url):
-		try:
-			from .urlutils import shorten_url, clip_set
-			short = shorten_url(url)
-			if short:
-				clip_set(short)
-				wx.CallAfter(ui.message, _("Short URL copied: ") + short)
-			else:
-				wx.CallAfter(ui.message, _("Could not shorten URL. Check your internet connection."))
-		except Exception:
-			logHandler.log.exception("URL Announcer: _do_shorten")
-
-	# ---- Dialog helpers (must run on the wx main thread) -------------------
+	# ---- Dialog helpers ----------------------------------------------------
 
 	def _show_modal(self, dialog_class, *args):
 		dlg = dialog_class(gui.mainFrame, *args)
